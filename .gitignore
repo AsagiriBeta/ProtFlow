@@ -16,14 +16,14 @@ venv/
 # Track code in esm3_pipeline, but ignore generated data/outputs inside it
 # (Git tracks folders implicitly via files; empty folders aren’t tracked unless you add a placeholder like .gitkeep)
 esm3_pipeline/__pycache__/
-esm3_pipeline/data/
-esm3_pipeline/outputs/
-esm3_pipeline/pdbs/
-esm3_pipeline/gbk_input/
-# Allow keeping empty folder structure with .gitkeep exceptions
+# Ignore contents of these folders but keep the folder itself via .gitkeep
+esm3_pipeline/data/*
 !esm3_pipeline/data/.gitkeep
+esm3_pipeline/outputs/*
 !esm3_pipeline/outputs/.gitkeep
+esm3_pipeline/pdbs/*
 !esm3_pipeline/pdbs/.gitkeep
+esm3_pipeline/gbk_input/*
 !esm3_pipeline/gbk_input/.gitkeep
 
 *.pdf
