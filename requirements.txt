@@ -1,0 +1,22 @@
+# Core runtime deps for ESM3-sm pipeline (Python >=3.9)
+# Note on PyTorch: install a CUDA/MPS build appropriate to your platform (see README)
+# On Linux (incl. Colab), we do NOT auto-install torch here to avoid clobbering GPU wheels.
+
+esm>=3.2.1.post1
+huggingface_hub>=0.36.0
+biopython>=1.85
+pandas>=2.3.3
+numpy>=2.3.4
+reportlab>=4.4.4
+requests>=2.31
+tqdm>=4.67.1
+py3Dmol>=2.5.3
+matplotlib>=3.10.7
+
+# Notebook UI (for local usage)
+notebook>=7.4.7
+ipykernel>=7.0.1
+
+# Optional: install torch automatically on non-Linux (e.g., macOS/Windows)
+# For Linux, follow README to pick the right build (CPU or CUDA)
+torch>=2.9.0; platform_system != 'Linux'

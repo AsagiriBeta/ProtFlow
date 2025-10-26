@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Jupyter/outputs
+*.log
+*.out
+
+# Project outputs
+esm3_pipeline/
+*.pdf
+*.pdb
+*.pdbqt
+pockets_summary.csv
+vina_results.csv
+
+# Downloads
+*.zip
+p2rank*/
+
+# macOS
+.DS_Store
+
