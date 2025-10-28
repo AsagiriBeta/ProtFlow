@@ -1,44 +1,76 @@
-# Python
-__pycache__/
+# ProtFlow Configuration Files
+
 *.pyc
+__pycache__/
 *.pyo
 *.pyd
-.env
-.venv/
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
 venv/
-.ipynb_checkpoints/
-
-# Jupyter/outputs
-*.log
-*.out
-
-# Project outputs
-# Track code in esm3_pipeline, but ignore generated data/outputs inside it
-# (Git tracks folders implicitly via files; empty folders aren’t tracked unless you add a placeholder like .gitkeep)
-esm3_pipeline/__pycache__/
-# Ignore contents of these folders but keep the folder itself via .gitkeep
-esm3_pipeline/data/*
-!esm3_pipeline/data/.gitkeep
-esm3_pipeline/outputs/*
-!esm3_pipeline/outputs/.gitkeep
-esm3_pipeline/pdbs/*
-!esm3_pipeline/pdbs/.gitkeep
-esm3_pipeline/gbk_input/*
-!esm3_pipeline/gbk_input/.gitkeep
-
-*.pdf
-*.pdb
-*.pdbqt
-pockets_summary.csv
-vina_results.csv
-
-# Downloads
-*.zip
-p2rank*/
-
-# macOS
-.DS_Store
+ENV/
+env/
+.venv/
 
 # IDE
+.vscode/
 .idea/
-*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# ProtFlow specific
+esm3_pipeline/gbk_input/*.gbk
+esm3_pipeline/gbk_input/*.gbff
+esm3_pipeline/pdbs/*.pdb
+esm3_pipeline/pdbs/*.pdbqt
+esm3_pipeline/outputs/*
+esm3_pipeline/data/*
+esm3_pipeline/antismash_out/*
+esm3_pipeline/.cache/
+*.faa
+*.fasta
+*.log
+
+# P2Rank
+esm3_pipeline/p2rank/
+p2rank-*.zip
+
+# Logs
+*.log
+logs/
+
+# Config (keep examples)
+protflow_config.json
+protflow_config.yaml
+!config.example.json
+!config.example.yaml
+

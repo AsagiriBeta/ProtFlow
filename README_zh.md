@@ -1,106 +1,235 @@
-# 蛋白质结构预测、口袋识别、配体对接与BGC注释的模块化流程
+# ProtFlow
 
-一个模块化工具包：解析 GenBank 蛋白序列、用 ESM3-sm 预测结构、用 P2Rank 识别口袋、准备配体并用 Vina 对接、生成报告，并可选运行 antiSMASH——各步骤均可独立执行、互不强制依赖。
+蛋白质结构预测、口袋识别与配体对接的模块化流程。
 
-[English README](README.md)
+**📖 [English README](README.md) | [Complete Documentation](DOCUMENTATION.md) | [完整文档](DOCUMENTATION_zh.md)**
 
-本仓库支持在本地或 Google Colab 运行，主流程示例见 `ESM3_sm_pipeline-2.ipynb`，并提供命令行方式独立运行任意步骤。
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/ProtFlow.ipynb)
 
-## 模块化与命令行
-- 包实现位于 `esm3_pipeline/`：
-  - GenBank 解析（`seq_parser.py`）
-  - ESM3-sm 预测（`esm3_predict.py`）
-  - 口袋识别 P2Rank（`p2rank.py`）
-  - 配体准备（`ligand_prep.py`）
-  - Vina 对接（`vina_dock.py`）
-  - 报告生成（`reporting.py`）
-  - antiSMASH 可选分析（`antismash.py`）
-- 命令行运行示例（各步骤可选）：
+---
+
+## 概述
+
+ProtFlow 将多个生物信息学工具整合到一个无缝的模块化流程中：
+
+- **GenBank 解析** → 从 GenBank 文件提取蛋白质序列
+- **结构预测** → 使用 ESM3-sm 预测3D结构
+- **口袋识别** → 使用 P2Rank 识别结合口袋
+- **配体对接** → 使用 AutoDock Vina 进行配体对接
+- **报告生成** → 创建综合性 PDF 报告
+
+**若需进行 antiSMASH BGC 注释**，请使用独立的 [AntiSMASH_Colab.ipynb](AntiSMASH_Colab.ipynb) 笔记本。
+
+每个步骤都是独立的，可以单独运行或作为完整流程运行。
+
+---
+
+## 系统要求
+
+- **Python 3.12+**（推荐）
+- 支持 CUDA 的 GPU（推荐用于结构预测）
+- HuggingFace 账户和 token（用于访问 ESM3 模型）
+
+---
+
+## 快速开始
+
+### 方式一：Google Colab（推荐新手）
+
+**无需安装！在浏览器中使用免费 GPU 运行。**
+
+1. **结构预测与对接**：打开 [ProtFlow.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/ProtFlow.ipynb)
+2. **antiSMASH 分析**：打开 [AntiSMASH_Colab.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/AntiSMASH_Colab.ipynb)
+3. 启用 GPU：`运行时 → 更改运行时类型 → GPU`（仅 ProtFlow 需要）
+4. 按顺序运行单元格
+5. 获取 HuggingFace token：[huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)（仅 ProtFlow 需要）
+
+适用于：
+- 测试流程
+- 无本地 GPU
+- 快速分析（< 20 个蛋白质）
+
+### 方式二：本地安装
 
 ```bash
-python -m scripts.runner --parse-gbk --predict --p2rank --vina --report \
-  --gbk-dir ./esm3_pipeline/gbk_input --smiles "CCO" --limit 5
+# 克隆仓库
+git clone https://github.com/AsagiriBeta/ProtFlow.git
+cd ProtFlow
+
+# 创建虚拟环境（推荐 Python 3.12+）
+python3.12 -m venv .venv
+source .venv/bin/activate
+
+# 安装依赖
+pip install -r requirements.txt
+pip install -e .
+
+# 安装系统工具（macOS）
+bash scripts/setup_macos.sh
+# 或 Ubuntu/Debian
+bash scripts/setup_ubuntu.sh
+
+# 验证安装
+python scripts/check_deps.py
 ```
 
-可选参数说明：
-- `--parse-gbk` 解析 `--gbk-dir` 下的 `.gbk/.gbff`
-- `--predict` 使用 ESM3-sm 产生 PDB 到 `esm3_pipeline/pdbs`
-- `--p2rank` 口袋打分
-- `--vina` 若存在配体与口袋结果则进行对接
-- `--report` 生成 `esm3_results_report.pdf`
-- `--antismash` 运行 antiSMASH（需已安装）
+### 基本用法
 
-## antiSMASH（可选）
-- 不包含在 `requirements.txt`，建议用 conda 安装；也可用 Docker。
+```bash
+# 完整流程示例
+python -m scripts.runner \
+    --parse-gbk \
+    --predict \
+    --p2rank \
+    --vina \
+    --report \
+    --smiles "CCO" \
+    --limit 5
+```
 
-简要安装与使用：
-- 方案 A（推荐，Bioconda）
-  ```zsh
-  conda config --add channels conda-forge
-  conda config --add channels bioconda
-  conda create -y -n antismash antismash
-  conda activate antismash
-  download-antismash-databases
-  # 可选一次性准备缓存
-  antismash --prepare-data
-  antismash --version
-  ```
-- 方案 B（Docker，全量镜像，含数据库，下载较大）
-  ```zsh
-  mkdir -p ~/bin
-  curl -q https://dl.secondarymetabolites.org/releases/latest/docker-run_antismash-full > ~/bin/run_antismash
-  chmod a+x ~/bin/run_antismash
-  # 使用时务必使用绝对路径，且参数顺序固定：先输入文件，再输出目录
-  run_antismash /绝对路径/输入.gbk /绝对路径/输出目录 --taxon bacteria
-  ```
-  注：若使用 lite 镜像，请另行下载数据库（同官网说明）。
+### 命令行选项
 
-- 在本仓库中运行 antiSMASH：
-  ```zsh
-  # 建议在已安装 antiSMASH 的 conda 环境中执行
-  conda activate antismash
-  python -m scripts.runner --antismash --gbk-dir ./esm3_pipeline/gbk_input
-  ```
-  输出位于 `esm3_pipeline/antismash_out`，通常包含 `index.html`。
+所有标志都是可选的 - 只运行您需要的步骤：
 
-常见问题（简要）：
-- 找不到 antismash：确保已 `conda activate antismash`，并检查 `echo $PATH`。
-- 第一次运行较慢或缺数据库：先执行 `download-antismash-databases` 与 `antismash --prepare-data`。
-- Docker 路径：wrapper 需绝对路径，参数顺序固定：输入文件 → 输出目录。
-- Apple Silicon：Bioconda 兼容；Docker 可能拉取 amd64 镜像，首次运行较慢。
+- `--parse-gbk` - 解析 GenBank 文件以提取蛋白质
+- `--predict` - 使用 ESM3-sm 预测结构
+- `--p2rank` - 识别结合口袋
+- `--vina` - 运行分子对接
+- `--report` - 生成 PDF 报告
 
-### Apple Silicon（macOS arm64）说明
-- 在 arm64 上，Bioconda 可能因为 `hmmer2` 没有 `osx-arm64` 版本而解算失败。
-- 两种可行方案：
-  1) 推荐使用 Docker wrapper（不需要 conda）：安装 Docker Desktop，然后按上文使用 `run_antismash`。本仓库代码会自动识别 wrapper。
-  2) 使用 Rosetta x86_64 conda 环境：
-     ```zsh
-     softwareupdate --install-rosetta --agree-to-license # 如未安装
-     arch -x86_64 zsh -c 'CONDA_SUBDIR=osx-64 conda create -y -n antismash antismash'
-     conda activate antismash
-     conda config --env --set subdir osx-64
-     download-antismash-databases
-     antismash --prepare-data && antismash --version
-     ```
+**常用参数：**
+- `--gbk-dir DIR` - GenBank 文件目录（默认：`./esm3_pipeline/gbk_input`）
+- `--smiles STR` - 配体的 SMILES 字符串
+- `--ligand FILE` - 配体文件（MOL2、SDF、PDB 等）
+- `--limit N` - 限制序列数量
+- `--config FILE` - 从文件加载配置
+- `--parallel` - 启用并行处理
+- `--workers N` - 并行工作进程数
 
-## 依赖与环境
-- Python 包见 `requirements.txt`；Linux 上请按平台选择合适的 PyTorch 轮子（CPU/CUDA）。
-- 系统工具：Java（P2Rank）、OpenBabel（格式转换与 PDBQT）、AutoDock Vina（对接）。
-- macOS/Ubuntu 可使用脚本安装：
-  - Ubuntu/Debian：`bash scripts/setup_ubuntu.sh`
-  - macOS（Homebrew）：`bash scripts/setup_macos.sh`
 
-### Hugging Face Token
-- 访问 `esm3-sm-open-v1` 需要 Hugging Face Token：环境变量 `HF_TOKEN` 或在 notebook 里交互登录。
+### 示例 1：仅结构预测
+```bash
+python -m scripts.runner --parse-gbk --predict --limit 10
+```
 
-## Notebook 使用提示
-- Colab 上启用 GPU 以加速 ESM3-sm；各单元可独立运行，步骤可跳过。
-- notebook 已改为调用模块函数，功能保持不变但更易维护。
+### 示例 2：使用 SMILES 对接
+```bash
+python -m scripts.runner --vina --smiles "CC(=O)O" --parallel --workers 4
+```
 
-## 注意事项
-- 若缺少外部工具（antiSMASH/Vina/OpenBabel/Java），相关步骤将自动跳过，不影响其他部分。
-- P2Rank jar 会自动下载/定位，无需手动配置路径。
-- CSV 坐标解析使用 `ast.literal_eval`，更安全。
+### 示例 3：使用配置文件
+创建 `config.json`：
+```json
+{
+  "max_sequences": 10,
+  "enable_cache": true,
+  "vina_exhaustiveness": 8
+}
+```
 
-## 许可证与第三方
-本项目工作流依赖第三方工具（P2Rank、AutoDock Vina、OpenBabel、antiSMASH），它们拥有各自的许可证，请在分发前进行审阅。
+运行：
+```bash
+python -m scripts.runner --config config.json --predict --report
+```
+
+### 示例 4：编程使用
+```python
+from pathlib import Path
+from esm3_pipeline import seq_parser, esm3_predict
+
+# 解析 GenBank 文件
+n = seq_parser.extract_proteins_from_gbk(
+    Path("./gbk_input"),
+    Path("./proteins.faa")
+)
+
+# 预测结构
+model, device = esm3_predict.load_esm3_small()
+selected = seq_parser.filter_and_select(Path("./proteins.faa"), limit=5)
+esm3_predict.predict_pdbs(model, selected, Path("./pdbs"))
+```
+
+---
+
+## 可选：antiSMASH
+
+antiSMASH 不包含在 `requirements.txt` 中，需单独安装：
+
+**Bioconda（推荐）：**
+```bash
+conda create -y -n antismash antismash
+conda activate antismash
+download-antismash-databases
+```
+
+**Docker（适用于 Apple Silicon）：**
+```bash
+mkdir -p ~/bin
+curl -q https://dl.secondarymetabolites.org/releases/latest/docker-run_antismash-full > ~/bin/run_antismash
+chmod a+x ~/bin/run_antismash
+```
+
+**使用：**
+```bash
+conda activate antismash
+python -m scripts.runner --antismash --gbk-dir ./esm3_pipeline/gbk_input
+```
+
+---
+
+## 文档
+
+- **[README.md](README.md)** - 英文简要文档
+- **[DOCUMENTATION.md](DOCUMENTATION.md)** - 完整英文文档及 API 参考
+- **[DOCUMENTATION_zh.md](DOCUMENTATION_zh.md)** - 完整中文文档及 API 参考
+
+---
+
+## 特性
+
+✅ **模块化设计** - 每个步骤都可独立运行  
+✅ **高性能** - GPU 加速、缓存、并行处理  
+✅ **灵活输入** - GenBank、FASTA、SMILES、分子文件  
+✅ **生产就绪** - 结构化日志、错误处理、测试  
+✅ **文档完善** - 全面的 API 文档和示例
+
+---
+
+## 故障排除
+
+**常见问题：**
+- "未找到 Java" → 安装 Java：`brew install openjdk`（macOS）或 `apt-get install default-jre`（Ubuntu）
+- "未找到 OpenBabel" → 安装：`brew install open-babel`（macOS）或 `apt-get install openbabel`（Ubuntu）
+- "未找到 Vina" → 安装：`brew install autodock-vina`（macOS）或 `apt-get install autodock-vina`（Ubuntu）
+- ESM3 模型失败 → 设置 `HF_TOKEN` 环境变量
+
+**调试模式：**
+```bash
+python -m scripts.runner --log-level DEBUG --log-file debug.log --predict
+```
+
+**检查依赖：**
+```bash
+python scripts/check_deps.py
+```
+
+---
+
+## 许可证
+
+本仓库依赖于具有自己许可证的第三方工具（P2Rank: Apache 2.0、AutoDock Vina: Apache 2.0、OpenBabel: GPL v2、antiSMASH: AGPL v3）。在重新分发之前请查看它们的许可证。
+
+---
+
+## 引用
+
+如果您在研究中使用 ProtFlow，请引用底层工具：
+- **ESM**: [Evolutionary Scale Modeling](https://github.com/evolutionaryscale/esm)
+- **P2Rank**: Krivák & Hoksza (2018). Journal of Cheminformatics, 10(1), 39.
+- **AutoDock Vina**: Trott & Olson (2010). Journal of Computational Chemistry, 31(2), 455-461.
+- **antiSMASH**: Blin et al. (2023). Nucleic Acids Research, 51(W1), W46-W50.
+
+---
+
+**详细文档请参阅 [DOCUMENTATION_zh.md](DOCUMENTATION_zh.md)**
+

@@ -1,171 +1,253 @@
-# Modular pipeline for protein structure prediction, pocket detection, ligand docking, and BGC annotation
+# ProtFlow
 
-A modular toolkit to parse GenBank proteins, predict structures with ESM3-sm, detect pockets (P2Rank), prepare ligands and dock (Vina), generate reports, and optionally run antiSMASH—each step is optional and can be run independently.
+A modular pipeline for protein structure prediction, pocket detection, and ligand docking.
 
-[中文文档 (Chinese README)](README_zh.md)
+**📖 [中文文档](README_zh.md) | [Complete Documentation](DOCUMENTATION.md) | [完整文档](DOCUMENTATION_zh.md)**
 
-This repo provides a Colab-friendly and local runnable pipeline to:
-- Parse GenBank files to extract protein CDS translations
-- Predict structure PDBs with ESM3 small (`esm3-sm-open-v1`)
-- Detect binding pockets with P2Rank
-- Prepare ligands (SMILES or SDF/MOL/PDB) and dock with AutoDock Vina
-- Produce a compact PDF report
-- Optional: Run antiSMASH on GBK/GBFF to annotate biosynthetic gene clusters
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/ProtFlow.ipynb)
 
-The main workflow lives in `ESM3_sm_pipeline-2.ipynb`.
+---
 
-## New: Modular Python package and CLI
+## Overview
 
-You can now run any step independently via a CLI:
+ProtFlow integrates multiple bioinformatics tools into a seamless, modular pipeline:
+
+- **GenBank Parsing** → Extract protein sequences from GenBank files
+- **Structure Prediction** → Predict 3D structures with ESM3-sm
+- **Pocket Detection** → Identify binding pockets with P2Rank
+- **Ligand Docking** → Dock ligands with AutoDock Vina
+- **Report Generation** → Create comprehensive PDF reports
+
+**For antiSMASH BGC annotation**, use the separate [AntiSMASH_Colab.ipynb](AntiSMASH_Colab.ipynb) notebook.
+
+Each step is independent and can be run separately or as a complete pipeline.
+
+---
+
+## Requirements
+
+- **Python 3.12+** (recommended)
+- GPU with CUDA support (recommended for structure prediction)
+- HuggingFace account and token for ESM3 model access
+
+---
+
+## Quick Start
+
+### Option 1: Google Colab (Recommended for Beginners)
+
+**No installation required! Run in your browser with free GPU.**
+
+1. **Structure Prediction & Docking**: Open [ProtFlow.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/ProtFlow.ipynb)
+2. **antiSMASH Analysis**: Open [AntiSMASH_Colab.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/AntiSMASH_Colab.ipynb)
+3. Enable GPU: `Runtime → Change runtime type → GPU` (for ProtFlow only)
+4. Run cells in order
+5. Get HuggingFace token: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) (for ProtFlow only)
+
+Perfect for:
+- Testing the pipeline
+- No local GPU available
+- Quick analyses (< 20 proteins)
+
+### Option 2: Local Installation
 
 ```bash
-python -m scripts.runner --parse-gbk --predict --p2rank --vina --report \
-  --gbk-dir ./esm3_pipeline/gbk_input --smiles "CCO" --limit 5
+# Clone repository
+git clone https://github.com/AsagiriBeta/ProtFlow.git
+cd ProtFlow
+
+# Create virtual environment (Python 3.12+ recommended)
+python3.12 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+pip install -e .
+
+# Install system tools (macOS)
+bash scripts/setup_macos.sh
+# Or for Ubuntu/Debian
+bash scripts/setup_ubuntu.sh
+
+# Verify installation
+python scripts/check_deps.py
 ```
 
-All flags are optional:
-- `--parse-gbk` parse GenBank files from `--gbk-dir`
-- `--predict` run ESM3-sm to produce PDBs into `esm3_pipeline/pdbs`
-- `--p2rank` score pockets
-- `--vina` run docking if ligand and pockets are available
-- `--report` build `esm3_results_report.pdf`
-- `--antismash` run optional antiSMASH (requires it to be installed)
+### Basic Usage
 
-The implementation lives in the `esm3_pipeline/` package. The CLI writes outputs under `esm3_pipeline/`.
+```bash
+# Full pipeline example
+python -m scripts.runner \
+    --parse-gbk \
+    --predict \
+    --p2rank \
+    --vina \
+    --report \
+    --smiles "CCO" \
+    --limit 5
+```
 
-## antiSMASH (optional)
+### CLI Options
 
-antiSMASH isn’t in `requirements.txt`. Install it via Bioconda (recommended) or Docker.
+All flags are optional - run only the steps you need:
 
-- Option A (Bioconda, recommended)
-  ```zsh
-  conda config --add channels conda-forge
-  conda config --add channels bioconda
-  conda create -y -n antismash antismash
-  conda activate antismash
-  download-antismash-databases
-  # optional warm-up caches
-  antismash --prepare-data
-  antismash --version
-  ```
+- `--parse-gbk` - Parse GenBank files to extract proteins
+- `--predict` - Predict structures with ESM3-sm
+- `--p2rank` - Detect binding pockets
+- `--vina` - Run molecular docking
+- `--report` - Generate PDF report
 
-- Option B (Docker, standalone full image with databases; large download)
-  ```zsh
-  mkdir -p ~/bin
-  curl -q https://dl.secondarymetabolites.org/releases/latest/docker-run_antismash-full > ~/bin/run_antismash
-  chmod a+x ~/bin/run_antismash
-  # Use absolute paths; args order is fixed: input first, then output dir
-  run_antismash /abs/path/input.gbk /abs/path/out --taxon bacteria
-  ```
-  For the lite image, download databases separately per the official docs.
+**Common Parameters:**
+- `--gbk-dir DIR` - GenBank files directory (default: `./esm3_pipeline/gbk_input`)
+- `--smiles STR` - SMILES string for ligand
+- `--ligand FILE` - Ligand file (MOL2, SDF, PDB, etc.)
+- `--limit N` - Limit number of sequences
+- `--config FILE` - Load configuration from file
+- `--parallel` - Enable parallel processing
+- `--workers N` - Number of parallel workers
 
-Run with this repo’s CLI:
-```zsh
-# from repo root, in an environment where antismash is installed
+---
+
+## Requirements
+
+- **Python**: 3.12+
+- **System Tools**: Java, OpenBabel, AutoDock Vina
+- **HuggingFace Token**: Required for ESM3 model access
+
+**Set your token:**
+```bash
+export HF_TOKEN=hf_your_token_here
+# Or login interactively
+huggingface-cli login
+```
+
+---
+
+## Examples
+
+### Example 1: Structure Prediction Only
+```bash
+python -m scripts.runner --parse-gbk --predict --limit 10
+```
+
+### Example 2: Docking with SMILES
+```bash
+python -m scripts.runner --vina --smiles "CC(=O)O" --parallel --workers 4
+```
+
+### Example 3: Using Configuration File
+Create `config.json`:
+```json
+{
+  "max_sequences": 10,
+  "enable_cache": true,
+  "vina_exhaustiveness": 8
+}
+```
+
+Run:
+```bash
+python -m scripts.runner --config config.json --predict --report
+```
+
+### Example 4: Programmatic Usage
+```python
+from pathlib import Path
+from esm3_pipeline import seq_parser, esm3_predict
+
+# Parse GenBank files
+n = seq_parser.extract_proteins_from_gbk(
+    Path("./gbk_input"),
+    Path("./proteins.faa")
+)
+
+# Predict structures
+model, device = esm3_predict.load_esm3_small()
+selected = seq_parser.filter_and_select(Path("./proteins.faa"), limit=5)
+esm3_predict.predict_pdbs(model, selected, Path("./pdbs"))
+```
+
+---
+
+## Optional: antiSMASH
+
+antiSMASH is not included in `requirements.txt`. Install separately:
+
+**Bioconda (recommended):**
+```bash
+conda create -y -n antismash antismash
+conda activate antismash
+download-antismash-databases
+```
+
+**Docker (for Apple Silicon):**
+```bash
+mkdir -p ~/bin
+curl -q https://dl.secondarymetabolites.org/releases/latest/docker-run_antismash-full > ~/bin/run_antismash
+chmod a+x ~/bin/run_antismash
+```
+
+**Usage:**
+```bash
 conda activate antismash
 python -m scripts.runner --antismash --gbk-dir ./esm3_pipeline/gbk_input
 ```
-Outputs go to `esm3_pipeline/antismash_out` (usually includes `index.html`).
 
-Troubleshooting (quick):
-- “antismash: command not found”: ensure `conda activate antismash` and PATH is correct.
-- Slow first run or missing DBs: run `download-antismash-databases` and `antismash --prepare-data`.
-- Docker wrapper requires absolute paths; argument order is input → output.
-- Apple Silicon works with Bioconda; Docker may use amd64 images (first run slower).
+---
 
-### Apple Silicon (macOS arm64) note
-- On arm64, Bioconda may fail to solve due to `hmmer2` not being available for `osx-arm64`.
-- Two working options:
-  1) Prefer Docker wrapper (no conda needed): install Docker Desktop, then use `run_antismash` as shown above. Our code auto-detects the wrapper.
-  2) Use a Rosetta x86_64 conda env:
-     ```zsh
-     softwareupdate --install-rosetta --agree-to-license # once, if not installed
-     arch -x86_64 zsh -c 'CONDA_SUBDIR=osx-64 conda create -y -n antismash antismash'
-     conda activate antismash
-     conda config --env --set subdir osx-64
-     download-antismash-databases
-     antismash --prepare-data && antismash --version
-     ```
+## Documentation
 
-## Requirements
-- Python 3.9–3.11 recommended
-- See `requirements.txt` for Python packages
-- System tools:
-  - Java (JRE) for P2Rank
-  - OpenBabel (obabel)
-  - AutoDock Vina (vina)
-  - (Colab only) `apt-get` is used to install system tools
+- **[README_zh.md](README_zh.md)** - Chinese brief documentation
+- **[DOCUMENTATION.md](DOCUMENTATION.md)** - Complete English documentation with API reference
+- **[DOCUMENTATION_zh.md](DOCUMENTATION_zh.md)** - Complete Chinese documentation with API reference
 
-ESM3-sm access requires a Hugging Face token with permissions to `esm3-sm-open-v1`.
+---
 
-### Dependencies overview (concise)
-- Python packages (see versions in `requirements.txt`):
-  - esm, huggingface_hub, biopython, pandas, numpy, tqdm, requests, reportlab
-  - rdkit-pypi, py3Dmol, matplotlib (optional/convenience)
-  - notebook, ipykernel (for local .ipynb execution)
-  - torch (on Linux we do not auto-install; choose a CPU/CUDA/MPS build appropriate for your platform)
-- System tools: Java (for P2Rank), OpenBabel (obabel), AutoDock Vina (vina), wget/unzip (Colab/Ubuntu only)
+## Features
 
-## Quickstart (Google Colab)
-1. Open the notebook in Colab.
-2. Runtime → Change runtime type → GPU.
-3. Run Cell 1 to install dependencies (uses `pip` and `apt-get`).
-4. Set your token via environment variable or interactive login in Cell 2:
-   - Recommended: add a secret named `HF_TOKEN` and run `import os; os.environ['HF_TOKEN'] = 'hf_...'` before Cell 2
-5. Upload `.gbk`/`.gbff` files into the `gbk_input` folder as prompted or paste a sequence when asked.
-6. Continue through the cells.
+✅ **Modular Design** - Run any step independently  
+✅ **High Performance** - GPU acceleration, caching, parallel processing  
+✅ **Flexible Input** - GenBank, FASTA, SMILES, molecular files  
+✅ **Production Ready** - Structured logging, error handling, testing  
+✅ **Well Documented** - Comprehensive API docs and examples
 
-## Quickstart (macOS / Linux local)
-- Install Python deps:
+---
 
-```
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -U pip
-pip install -r requirements.txt
+## Troubleshooting
+
+**Common issues:**
+- "Java not found" → Install Java: `brew install openjdk` (macOS) or `apt-get install default-jre` (Ubuntu)
+- "OpenBabel not found" → Install: `brew install open-babel` (macOS) or `apt-get install openbabel` (Ubuntu)
+- "Vina not found" → Install: `brew install autodock-vina` (macOS) or `apt-get install autodock-vina` (Ubuntu)
+- ESM3 model fails → Set `HF_TOKEN` environment variable
+
+**Debug mode:**
+```bash
+python -m scripts.runner --log-level DEBUG --log-file debug.log --predict
 ```
 
-- Install PyTorch appropriate to your device:
-  - macOS (Apple Silicon):
-    - `pip install torch` (MPS acceleration available by default on recent versions)
-  - Linux CPU only:
-    - `pip install torch==2.4.* --index-url https://download.pytorch.org/whl/cpu`
-  - Linux with CUDA (e.g., 12.1):
-    - `pip install torch==2.4.* --index-url https://download.pytorch.org/whl/cu121`
-
-- Install system tools using helper scripts:
-  - Ubuntu/Debian:
-    - `bash scripts/setup_ubuntu.sh`
-  - macOS (Homebrew):
-    - `bash scripts/setup_macos.sh`
-
-- P2Rank is auto-downloaded in the notebook. Ensure `java -version` works.
-
-- Run the notebook via Jupyter or VS Code/PyCharm:
-
-```
-jupyter notebook ESM3_sm_pipeline-2.ipynb
+**Check dependencies:**
+```bash
+python scripts/check_deps.py
 ```
 
-## Environment variables
-- `HF_TOKEN`: your Hugging Face access token for `esm3-sm-open-v1`. The notebook reads this if set.
-  - Copy `.env.example` to `.env` and set the value if you use dotenv in your IDE.
-
-## Security & portability notes
-- Removed hardcoded HF token; the notebook reads `HF_TOKEN` or prompts for interactive login.
-- Dynamic BASE path (uses `/content` on Colab and the project directory locally).
-- P2Rank jar auto-discovery; no fixed path required.
-- Parse coordinates from CSV using `ast.literal_eval` instead of `eval`.
-
-## Limitations
-- Installing Torch requires choosing the correct CPU/CUDA/MPS build for your platform (see above).
-- AutoDock Vina may not be available via package managers on some platforms; manual installation or building from source may be required.
-- On macOS, you may need to add Java/OpenBabel/Vina to your PATH to ensure executables are available.
-
-## GitHub tips
-- `.gitignore` excludes generated artifacts (PDB/PDBQT, PDFs, CSVs, downloads) and virtualenvs.
-- Do not commit your real `HF_TOKEN`; use `.env` locally and GitHub Secrets in CI.
-- Consider adding a CI job to lint/execute a smoke cell if you convert the notebook to a script.
+---
 
 ## License
-This repository contains a workflow that depends on third-party tools with their own licenses (P2Rank, AutoDock Vina, OpenBabel). Review their licenses before redistribution.
+
+This repository depends on third-party tools with their own licenses (P2Rank: Apache 2.0, AutoDock Vina: Apache 2.0, OpenBabel: GPL v2, antiSMASH: AGPL v3). Review their licenses before redistribution.
+
+---
+
+## Citation
+
+If you use ProtFlow in your research, please cite the underlying tools:
+- **ESM**: [Evolutionary Scale Modeling](https://github.com/evolutionaryscale/esm)
+- **P2Rank**: Krivák & Hoksza (2018). Journal of Cheminformatics, 10(1), 39.
+- **AutoDock Vina**: Trott & Olson (2010). Journal of Computational Chemistry, 31(2), 455-461.
+- **antiSMASH**: Blin et al. (2023). Nucleic Acids Research, 51(W1), W46-W50.
+
+---
+
+**For detailed documentation, see [DOCUMENTATION.md](DOCUMENTATION.md)**
+

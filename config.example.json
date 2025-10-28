@@ -1,0 +1,38 @@
+# Example configuration file for ProtFlow
+# Save as protflow_config.json or protflow_config.yaml
+
+{
+  "base_dir": "./esm3_pipeline",
+
+  "# ESM3 model settings": "",
+  "esm3_model": "esm3-sm-open-v1",
+  "esm3_num_steps": 8,
+
+  "# Sequence filtering": "",
+  "min_seq_length": 50,
+  "max_seq_length": 1200,
+  "max_sequences": 10,
+
+  "# P2Rank settings": "",
+  "p2rank_version": "2.5.1",
+  "p2rank_threads": 2,
+
+  "# Vina settings": "",
+  "vina_box_size": 20,
+  "vina_exhaustiveness": 8,
+  "vina_num_modes": 9,
+
+  "# antiSMASH settings": "",
+  "antismash_env": "antismash",
+  "antismash_taxon": "bacteria",
+
+  "# Logging": "",
+  "log_level": "INFO",
+  "log_file": null,
+
+  "# Performance": "",
+  "enable_cache": true,
+  "parallel_predictions": false,
+  "max_workers": 4
+}
+
