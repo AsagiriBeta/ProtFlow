@@ -20,7 +20,26 @@ ProtFlow integrates multiple bioinformatics tools into a seamless, modular pipel
 
 **For antiSMASH BGC annotation**, use the separate [AntiSMASH_Colab.ipynb](AntiSMASH_Colab.ipynb) notebook.
 
+**For Prokka → ESM3 → DALI workflow**, use the [Prokka_ESM3_Workflow.ipynb](Prokka_ESM3_Workflow.ipynb) notebook - a streamlined pipeline for genomic annotation and structure prediction.
+
 Each step is independent and can be run separately or as a complete pipeline.
+
+---
+
+## Available Workflows
+
+### 1. **ProtFlow** (Main Pipeline)
+- **Flow**: GenBank → ESM3 → P2Rank → AutoDock Vina
+- **Use**: Known protein sequences, drug discovery
+
+### 2. **AntiSMASH Analysis**
+- **Flow**: Genome → antiSMASH → BGC analysis
+- **Use**: Secondary metabolite discovery
+
+### 3. **Prokka-ESM3-DALI** ⭐
+- **Flow**: FNA → Prokka → ESM3 → DALI-ready PDBs
+- **Use**: Bacterial/archaeal genome annotation and structural proteomics
+- **Notebook**: [Prokka_ESM3_Workflow.ipynb](Prokka_ESM3_Workflow.ipynb)
 
 ---
 
@@ -38,16 +57,13 @@ Each step is independent and can be run separately or as a complete pipeline.
 
 **No installation required! Run in your browser with free GPU.**
 
-1. **Structure Prediction & Docking**: Open [ProtFlow.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/ProtFlow.ipynb)
-2. **antiSMASH Analysis**: Open [AntiSMASH_Colab.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/AntiSMASH_Colab.ipynb)
-3. Enable GPU: `Runtime → Change runtime type → GPU` (for ProtFlow only)
-4. Run cells in order
-5. Get HuggingFace token: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) (for ProtFlow only)
-
-Perfect for:
-- Testing the pipeline
-- No local GPU available
-- Quick analyses (< 20 proteins)
+1. Choose your workflow:
+   - [ProtFlow.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/ProtFlow.ipynb) - Structure prediction & docking
+   - [AntiSMASH_Colab.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/AntiSMASH_Colab.ipynb) - BGC analysis
+   - [Prokka_ESM3_Workflow.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/Prokka_ESM3_Workflow.ipynb) - Prokka→ESM3→DALI ⭐
+2. Enable GPU: `Runtime → Change runtime type → GPU`
+3. Run cells in order
+4. Get HuggingFace token for ESM3 workflows: [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
 
 ### Option 2: Local Installation
 

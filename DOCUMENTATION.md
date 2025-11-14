@@ -24,8 +24,9 @@ A modular pipeline for protein structure prediction, pocket detection, and ligan
 
 ## Overview
 
-ProtFlow is a comprehensive toolkit that integrates multiple bioinformatics tools into a seamless pipeline:
+ProtFlow is a comprehensive toolkit that integrates multiple bioinformatics tools into seamless pipelines:
 
+### Main Pipeline (ProtFlow)
 - **GenBank Parsing**: Extract protein sequences from GenBank files
 - **Structure Prediction**: Predict 3D structures using ESM3-sm model
 - **Pocket Detection**: Identify binding pockets with P2Rank
@@ -33,7 +34,9 @@ ProtFlow is a comprehensive toolkit that integrates multiple bioinformatics tool
 - **Molecular Docking**: Perform docking with AutoDock Vina
 - **Report Generation**: Create comprehensive PDF reports
 
-**For antiSMASH BGC annotation**, use the separate [AntiSMASH_Colab.ipynb](AntiSMASH_Colab.ipynb) notebook.
+### Additional Workflows
+- **AntiSMASH**: BGC annotation pipeline ([AntiSMASH_Colab.ipynb](AntiSMASH_Colab.ipynb))
+- **Prokka-ESM3-DALI**: Genome annotation → structure prediction → DALI format ([Prokka_ESM3_Workflow.ipynb](Prokka_ESM3_Workflow.ipynb))
 
 ### Key Features
 
@@ -223,6 +226,28 @@ selected = seq_parser.filter_and_select(
 model, device = esm3_predict.load_esm3_small()
 esm3_predict.predict_pdbs(model, selected, Path("./pdbs"))
 ```
+
+### Prokka-ESM3-DALI Workflow
+
+For genomic annotation and structure prediction:
+
+```python
+# Open Prokka_ESM3_Workflow.ipynb in Google Colab or Jupyter
+# 1. Upload FNA file (nucleotide sequences)
+# 2. Configure parameters:
+OUTPUT_PREFIX = "my_genome"
+KINGDOM = "Bacteria"  # or "Archaea", "Viruses"
+NUM_STEPS = 8         # ESM3 generation steps
+MAX_SEQ_LENGTH = 400  # Maximum protein length
+
+# 3. Run all cells - the workflow will:
+#    - Annotate genes with Prokka
+#    - Predict structures with ESM3
+#    - Prepare DALI-ready PDB files
+#    - Package results for download
+```
+
+**Output**: ZIP file containing Prokka annotations, ESM3 structures, and DALI-ready PDB files.
 
 ---
 

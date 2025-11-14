@@ -24,8 +24,9 @@
 
 ## 概述
 
-ProtFlow 是一个综合性工具包，将多个生物信息学工具整合到一个无缝流程中：
+ProtFlow 是一个综合性工具包，将多个生物信息学工具整合到无缝流程中：
 
+### 主流程（ProtFlow）
 - **GenBank 解析**：从 GenBank 文件提取蛋白质序列
 - **结构预测**：使用 ESM3-sm 模型预测3D结构
 - **口袋识别**：使用 P2Rank 识别结合口袋
@@ -33,7 +34,9 @@ ProtFlow 是一个综合性工具包，将多个生物信息学工具整合到�
 - **分子对接**：使用 AutoDock Vina 进行对接
 - **报告生成**：创建综合性 PDF 报告
 
-**若需进行 antiSMASH BGC 注释**，请使用独立的 [AntiSMASH_Colab.ipynb](AntiSMASH_Colab.ipynb) 笔记本。
+### 附加工作流
+- **AntiSMASH**：BGC 注释流程（[AntiSMASH_Colab.ipynb](AntiSMASH_Colab.ipynb)）
+- **Prokka-ESM3-DALI**：基因组注释 → 结构预测 → DALI 格式（[Prokka_ESM3_Workflow.ipynb](Prokka_ESM3_Workflow.ipynb)）
 
 ### 主要特性
 
@@ -267,6 +270,28 @@ selected = seq_parser.filter_and_select(
 model, device = esm3_predict.load_esm3_small()
 esm3_predict.predict_pdbs(model, selected, Path("./pdbs"))
 ```
+
+### Prokka-ESM3-DALI 工作流
+
+用于基因组注释和结构预测：
+
+```python
+# 在 Google Colab 或 Jupyter 中打开 Prokka_ESM3_Workflow.ipynb
+# 1. 上传 FNA 文件（核酸序列）
+# 2. 配置参数：
+OUTPUT_PREFIX = "my_genome"
+KINGDOM = "Bacteria"  # 或 "Archaea", "Viruses"
+NUM_STEPS = 8         # ESM3 生成步数
+MAX_SEQ_LENGTH = 400  # 最大蛋白质长度
+
+# 3. 运行所有单元格 - 工作流将：
+#    - 使用 Prokka 注释基因
+#    - 使用 ESM3 预测结构
+#    - 准备 DALI 就绪的 PDB 文件
+#    - 打包结果供下载
+```
+
+**输出**：包含 Prokka 注释、ESM3 结构和 DALI 就绪 PDB 文件的 ZIP 文件。
 
 ---
 

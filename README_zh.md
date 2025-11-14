@@ -18,19 +18,27 @@ ProtFlow 将多个生物信息学工具整合到一个无缝的模块化流程�
 - **配体对接** → 使用 AutoDock Vina 进行配体对接
 - **报告生成** → 创建综合性 PDF 报告
 
-**若需进行 antiSMASH BGC 注释**，请使用独立的 [AntiSMASH_Colab.ipynb](AntiSMASH_Colab.ipynb) 笔记本。
-
 每个步骤都是独立的，可以单独运行或作为完整流程运行。
 
 ---
 
-## 系统要求
+## 可用工作流
 
-- **Python 3.12+**（推荐）
-- 支持 CUDA 的 GPU（推荐用于结构预测）
-- HuggingFace 账户和 token（用于访问 ESM3 模型）
+### 1. **ProtFlow**（主流程）
+- **流程**: GenBank → ESM3 → P2Rank → AutoDock Vina
+- **用途**: 已知蛋白质序列、药物发现
+
+### 2. **AntiSMASH 分析**
+- **流程**: 基因组 → antiSMASH → BGC 分析
+- **用途**: 次级代谢物发现
+
+### 3. **Prokka-ESM3-DALI** ⭐
+- **流程**: FNA → Prokka → ESM3 → DALI 格式 PDB
+- **用途**: 细菌/古菌基因组注释和结构蛋白质组学
+- **笔记本**: [Prokka_ESM3_Workflow.ipynb](Prokka_ESM3_Workflow.ipynb)
 
 ---
+
 
 ## 快速开始
 
@@ -38,16 +46,13 @@ ProtFlow 将多个生物信息学工具整合到一个无缝的模块化流程�
 
 **无需安装！在浏览器中使用免费 GPU 运行。**
 
-1. **结构预测与对接**：打开 [ProtFlow.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/ProtFlow.ipynb)
-2. **antiSMASH 分析**：打开 [AntiSMASH_Colab.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/AntiSMASH_Colab.ipynb)
-3. 启用 GPU：`运行时 → 更改运行时类型 → GPU`（仅 ProtFlow 需要）
-4. 按顺序运行单元格
-5. 获取 HuggingFace token：[huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)（仅 ProtFlow 需要）
-
-适用于：
-- 测试流程
-- 无本地 GPU
-- 快速分析（< 20 个蛋白质）
+1. 选择工作流：
+   - [ProtFlow.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/ProtFlow.ipynb) - 结构预测与对接
+   - [AntiSMASH_Colab.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/AntiSMASH_Colab.ipynb) - BGC 分析
+   - [Prokka_ESM3_Workflow.ipynb](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/Prokka_ESM3_Workflow.ipynb) - Prokka→ESM3→DALI ⭐
+2. 启用 GPU：`运行时 → 更改运行时类型 → GPU`
+3. 按顺序运行单元格
+4. 获取 HuggingFace token（ESM3 工作流需要）：[huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
 
 ### 方式二：本地安装
 
