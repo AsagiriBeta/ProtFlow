@@ -10,7 +10,7 @@ import torch
 from tqdm import tqdm
 
 from .logger import get_logger
-from .exceptions import ModelLoadError, PredictionError
+from .exceptions import ModelLoadError
 
 logger = get_logger(__name__)
 
@@ -62,7 +62,18 @@ def load_esm3_small(
         # Lazy import to avoid loading if not needed
         from esm.models.esm3 import ESM3
 
-        model = ESM3.from_pretrained(model_name).to(device)
+        original_torch_load = torch.load
+
+        def _torch_load_weights_only(*args, **kwargs):
+            kwargs.setdefault('weights_only', True)
+            return original_torch_load(*args, **kwargs)
+
+        torch.load = _torch_load_weights_only
+        try:
+            model = ESM3.from_pretrained(model_name).to(device)
+        finally:
+            torch.load = original_torch_load
+
         model.eval()  # Set to evaluation mode
 
         logger.info(f"Model loaded successfully on {device}")
@@ -170,4 +181,3 @@ def clear_model_cache():
     global _model_cache
     _model_cache = None
     logger.info("Model cache cleared")
-

@@ -74,6 +74,23 @@ micromamba run -n prokka prokka --setupdb
 jupyter lab Prokka_ESM3_Workflow_JLab.ipynb
 ```
 
+**For JupyterLab with CUDA on remote servers:**
+
+If you encounter `nvcc: not found` or PyTorch can't detect CUDA in venv:
+
+```bash
+# 1. Upload and run CUDA setup script
+chmod +x setup_cuda_env.sh
+./setup_cuda_env.sh ~/jupyter-env-3.12  # Replace with your venv path
+
+# 2. Restart JupyterLab
+pkill -f jupyter
+source ~/jupyter-env-3.12/bin/activate
+jupyter lab
+```
+
+📖 See [JUPYTERLAB_CUDA_SETUP.md](JUPYTERLAB_CUDA_SETUP.md) for detailed instructions.
+
 See `.env.example` for configuration options.
 
 ---
