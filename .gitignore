@@ -48,20 +48,17 @@ coverage.xml
 *.ipynb_checkpoints
 
 # ProtFlow specific
-esm3_pipeline/gbk_input/*.gbk
-esm3_pipeline/gbk_input/*.gbff
-esm3_pipeline/pdbs/*.pdb
-esm3_pipeline/pdbs/*.pdbqt
-esm3_pipeline/outputs/*
-esm3_pipeline/data/*
-esm3_pipeline/antismash_out/*
-esm3_pipeline/.cache/
+outputs/
+data/inputs/*
+data/pdbs/*.pdb
+data/pdbs/*.pdbqt
+data/outputs/*
+data/antismash_out/*
+.cache/
 *.faa
 *.fasta
-*.log
 
 # P2Rank
-esm3_pipeline/p2rank/
 p2rank-*.zip
 
 # Logs

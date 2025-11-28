@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 from pathlib import Path
 
 # Read README
-readme_file = Path(__file__).parent / "README.md"
+readme_file = Path(__file__).parent / "docs" / "README.md"
 long_description = readme_file.read_text(encoding="utf-8") if readme_file.exists() else ""
 
 # Read requirements
@@ -24,7 +24,8 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/AsagiriBeta/ProtFlow",
-    packages=find_packages(exclude=["tests", "tests.*"]),
+    packages=find_packages(where="src", exclude=["tests", "tests.*"]),
+    package_dir={"": "src"},
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
@@ -58,7 +59,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "protflow=scripts.runner:main",
+            "protflow=src.scripts.runner:main",
         ],
     },
     include_package_data=True,
