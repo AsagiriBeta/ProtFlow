@@ -1,0 +1,101 @@
+# Example configuration file for ProtFlow
+# Save as config.json in the project root or specify via --config parameter
+# This configuration supports the new project structure with outputs/, data/, src/protflow/, and notebooks/
+
+{
+  "# Project structure paths": "",
+  "base_dir": "./outputs",
+  "data_dir": "./data",
+  "src_dir": "./src/protflow",
+  "notebooks_dir": "./notebooks",
+  "scripts_dir": "./src/scripts",
+  
+  "# Input data subdirectories": "",
+  "input_sequences_dir": "./data/sequences",
+  "input_structures_dir": "./data/structures",
+  "input_annotations_dir": "./data/annotations",
+  
+  "# Output subdirectories": "",
+  "predictions_dir": "./outputs/predictions",
+  "structures_dir": "./outputs/structures",
+  "logs_dir": "./outputs/logs",
+  "cache_dir": "./outputs/cache",
+  "temp_dir": "./outputs/temp",
+  
+  "# ESM3 model settings": "",
+  "esm3_model": "esm3-sm-open-v1",
+  "esm3_num_steps": 8,
+  "esm3_device": "cuda",
+  "esm3_precision": "bf16",
+  
+  "# Sequence filtering": "",
+  "min_seq_length": 50,
+  "max_seq_length": 1200,
+  "max_sequences": 10,
+  "sequence_identity_threshold": 0.9,
+  
+  "# P2Rank settings": "",
+  "p2rank_version": "2.5.1",
+  "p2rank_threads": 2,
+  "p2rank_prediction_threshold": 0.5,
+  
+  "# Vina settings": "",
+  "vina_box_size": 20,
+  "vina_exhaustiveness": 8,
+  "vina_num_modes": 9,
+  "vina_cpu": 1,
+  
+  "# antiSMASH settings": "",
+  "antismash_env": "antismash",
+  "antismash_taxon": "bacteria",
+  "antismash_min_cluster_size": 5,
+  
+  "# CUDA and GPU settings": "",
+  "cuda_version": "13.0",
+  "gpu_memory_fraction": 0.8,
+  "allow_growth": true,
+  "visible_devices": "0",
+  
+  "# Server environment configuration": "",
+  "server_env": "development",
+  "max_concurrent_jobs": 4,
+  "job_timeout": 3600,
+  "memory_limit_gb": 16,
+  
+  "# Logging configuration": "",
+  "log_level": "INFO",
+  "log_file": "./outputs/logs/protflow.log",
+  "log_format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+  "log_max_bytes": 10485760,
+  "log_backup_count": 5,
+  
+  "# Performance and caching": "",
+  "enable_cache": true,
+  "cache_size_limit_gb": 2,
+  "cache_ttl_hours": 24,
+  "parallel_predictions": false,
+  "max_workers": 4,
+  "batch_size": 1,
+  
+  "# Quality control": "",
+  "enable_validation": true,
+  "min_structure_quality": 0.7,
+  "max_ram_usage_gb": 32,
+  
+  "# External tools paths": "",
+  "p2rank_path": null,
+  "vina_path": null,
+  "antismash_path": null,
+  "foldseek_path": null,
+  
+  "# API and web server settings": "",
+  "api_host": "127.0.0.1",
+  "api_port": 8080,
+  "api_debug": false,
+  "enable_swagger": true,
+  
+  "# Development and testing": "",
+  "debug_mode": false,
+  "test_data_dir": "./tests/data",
+  "skip_expensive_operations": false
+}

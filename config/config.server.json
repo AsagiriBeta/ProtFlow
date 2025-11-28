@@ -1,0 +1,100 @@
+# Server configuration for ProtFlow with CUDA 13 support
+# Optimized for production server environments
+
+{
+  "# Server-optimized paths": "",
+  "base_dir": "/opt/protflow/outputs",
+  "data_dir": "/opt/protflow/data",
+  "src_dir": "/opt/protflow/src/protflow",
+  "notebooks_dir": "/opt/protflow/notebooks",
+  "scripts_dir": "/opt/protflow/src/scripts",
+  
+  "# High-performance input directories": "",
+  "input_sequences_dir": "/opt/protflow/data/sequences",
+  "input_structures_dir": "/opt/protflow/data/structures",
+  "input_annotations_dir": "/opt/protflow/data/annotations",
+  
+  "# Optimized output directories": "",
+  "predictions_dir": "/opt/protflow/outputs/predictions",
+  "structures_dir": "/opt/protflow/outputs/structures",
+  "logs_dir": "/var/log/protflow",
+  "cache_dir": "/opt/protflow/outputs/cache",
+  "temp_dir": "/tmp/protflow",
+  
+  "# ESM3 server configuration": "",
+  "esm3_model": "esm3-sm-open-v1",
+  "esm3_num_steps": 12,
+  "esm3_device": "cuda",
+  "esm3_precision": "bf16",
+  
+  "# Production sequence processing": "",
+  "min_seq_length": 30,
+  "max_seq_length": 2000,
+  "max_sequences": 100,
+  "sequence_identity_threshold": 0.95,
+  
+  "# High-performance P2Rank": "",
+  "p2rank_version": "2.5.1",
+  "p2rank_threads": 16,
+  "p2rank_prediction_threshold": 0.7,
+  
+  "# Optimized Vina settings": "",
+  "vina_box_size": 25,
+  "vina_exhaustiveness": 16,
+  "vina_num_modes": 20,
+  "vina_cpu": 8,
+  
+  "# antiSMASH production config": "",
+  "antismash_env": "antismash",
+  "antismash_taxon": "bacteria",
+  "antismash_min_cluster_size": 10,
+  
+  "# CUDA 13 optimized settings": "",
+  "cuda_version": "13.0",
+  "gpu_memory_fraction": 0.95,
+  "allow_growth": false,
+  "visible_devices": "0,1,2,3",
+  
+  "# Production server environment": "",
+  "server_env": "production",
+  "max_concurrent_jobs": 16,
+  "job_timeout": 7200,
+  "memory_limit_gb": 128,
+  
+  "# Production logging": "",
+  "log_level": "WARNING",
+  "log_file": "/var/log/protflow/protflow.log",
+  "log_format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+  "log_max_bytes": 52428800,
+  "log_backup_count": 10,
+  
+  "# High-performance caching": "",
+  "enable_cache": true,
+  "cache_size_limit_gb": 10,
+  "cache_ttl_hours": 48,
+  "parallel_predictions": true,
+  "max_workers": 32,
+  "batch_size": 8,
+  
+  "# Strict quality control": "",
+  "enable_validation": true,
+  "min_structure_quality": 0.8,
+  "max_ram_usage_gb": 256,
+  
+  "# Production tool paths (update as needed)": "",
+  "p2rank_path": "/opt/tools/p2rank",
+  "vina_path": "/opt/tools/vina",
+  "antismash_path": "/opt/tools/antismash",
+  "foldseek_path": "/opt/tools/foldseek",
+  
+  "# Production API settings": "",
+  "api_host": "0.0.0.0",
+  "api_port": 8080,
+  "api_debug": false,
+  "enable_swagger": false,
+  
+  "# Production mode": "",
+  "debug_mode": false,
+  "test_data_dir": "/opt/protflow/tests/data",
+  "skip_expensive_operations": false
+}
