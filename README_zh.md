@@ -4,7 +4,7 @@
 
 **📖 [English README](README.md)**
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/00_genome_annotation_to_structure.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/00_genome_annotation_to_structure.ipynb)
 
 ---
 
@@ -51,25 +51,25 @@
 #### 🧬 **Prokka → ESM3 → DALI** (推荐)
 - **流程**: FNA → Prokka → ESM3 → DALI-ready PDBs
 - **笔记本**: [`notebooks/core/00_genome_annotation_to_structure.ipynb`](notebooks/core/00_genome_annotation_to_structure.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/00_genome_annotation_to_structure.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/00_genome_annotation_to_structure.ipynb)
 - **用途**: 基因组注释、结构蛋白质组学
 
 #### 🎯 **结构预测与分析**
 - **流程**: 蛋白质序列 → ESM3 → 结构分析
 - **笔记本**: [`notebooks/core/01_protein_structure_prediction.ipynb`](notebooks/core/01_protein_structure_prediction.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/01_protein_structure_prediction.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/01_protein_structure_prediction.ipynb)
 - **用途**: 蛋白质结构预测和分析
 
 #### 🔍 **口袋检测与分析**
 - **流程**: PDB结构 → P2Rank → 口袋分析
 - **笔记本**: [`notebooks/core/02_pocket_detection_p2rank.ipynb`](notebooks/core/02_pocket_detection_p2rank.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/02_pocket_detection_p2rank.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/02_pocket_detection_p2rank.ipynb)
 - **用途**: 结合位点检测和分析
 
 #### ⚗️ **配体对接与分析**
 - **流程**: PDB + 配体 → Vina → 对接分析
 - **笔记本**: [`notebooks/core/03_ligand_docking_vina.ipynb`](notebooks/core/03_ligand_docking_vina.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/03_ligand_docking_vina.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/03_ligand_docking_vina.ipynb)
 - **用途**: 分子对接和结合分析
 
 ### 2. **单独工具** - 独立分析
@@ -77,25 +77,25 @@
 #### 📝 **基因组注释 (Prokka)**
 - **工具**: Prokka 基因组注释
 - **笔记本**: [`notebooks/tools/10_genome_annotation_prokka.ipynb`](notebooks/tools/10_genome_annotation_prokka.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/10_genome_annotation_prokka.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/10_genome_annotation_prokka.ipynb)
 - **用途**: 细菌基因组注释
 
 #### 🧪 **蛋白质结构预测 (ESM3)**
 - **工具**: ESM3 结构预测
 - **笔记本**: [`notebooks/tools/11_protein_structure_esm3.ipynb`](notebooks/tools/11_protein_structure_esm3.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/11_protein_structure_esm3.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/11_protein_structure_esm3.ipynb)
 - **用途**: 单个蛋白质结构预测
 
 #### 📊 **结构比对 (DALI)**
 - **工具**: DALI 结构比对
 - **笔记本**: [`notebooks/tools/12_structure_alignment_dali.ipynb`](notebooks/tools/12_structure_alignment_dali.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/12_structure_alignment_dali.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/12_structure_alignment_dali.ipynb)
 - **用途**: 蛋白质结构比较
 
 #### 🧬 **BGC 分析 (antiSMASH)**
 - **工具**: antiSMASH BGC 检测
 - **笔记本**: [`notebooks/tools/13_biosynthetic_cluster_antismash.ipynb`](notebooks/tools/13_biosynthetic_cluster_antismash.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/13_biosynthetic_cluster_antismash.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/13_biosynthetic_cluster_antismash.ipynb)
 - **用途**: 抗生素合成基因簇分析
 
 ### 3. **分析工具** - 结果处理

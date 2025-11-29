@@ -4,7 +4,7 @@ A modular pipeline for protein structure prediction, pocket detection, and ligan
 
 **📖 [中文文档](README_zh.md)**
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/00_genome_annotation_to_structure.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/00_genome_annotation_to_structure.ipynb)
 
 ---
 
@@ -49,25 +49,25 @@ All notebooks are now organized in `/notebooks/` with systematic numbering:
 #### 🧬 **Prokka → ESM3 → DALI** (Recommended)
 - **Flow**: FNA → Prokka → ESM3 → DALI-ready PDBs
 - **Notebook**: [`notebooks/core/00_genome_annotation_to_structure.ipynb`](notebooks/core/00_genome_annotation_to_structure.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/00_genome_annotation_to_structure.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/00_genome_annotation_to_structure.ipynb)
 - **Use**: Genome annotation, structural proteomics
 
 #### 🎯 **Structure Prediction & Analysis**
 - **Flow**: Protein sequences → ESM3 → Structure analysis
 - **Notebook**: [`notebooks/core/01_protein_structure_prediction.ipynb`](notebooks/core/01_protein_structure_prediction.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/01_protein_structure_prediction.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/01_protein_structure_prediction.ipynb)
 - **Use**: Protein structure prediction and analysis
 
 #### 🔍 **Pocket Detection & Analysis**
 - **Flow**: PDB structures → P2Rank → Pocket analysis
 - **Notebook**: [`notebooks/core/02_pocket_detection_p2rank.ipynb`](notebooks/core/02_pocket_detection_p2rank.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/02_pocket_detection_p2rank.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/02_pocket_detection_p2rank.ipynb)
 - **Use**: Binding site detection and analysis
 
 #### ⚗️ **Ligand Docking & Analysis**
 - **Flow**: PDB + Ligands → Vina → Docking analysis
 - **Notebook**: [`notebooks/core/03_ligand_docking_vina.ipynb`](notebooks/core/03_ligand_docking_vina.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/03_ligand_docking_vina.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/03_ligand_docking_vina.ipynb)
 - **Use**: Molecular docking and binding analysis
 
 ### 2. **Individual Tools** - Standalone Analysis
@@ -75,25 +75,25 @@ All notebooks are now organized in `/notebooks/` with systematic numbering:
 #### 📝 **Genome Annotation (Prokka)**
 - **Tool**: Prokka genome annotation
 - **Notebook**: [`notebooks/tools/10_genome_annotation_prokka.ipynb`](notebooks/tools/10_genome_annotation_prokka.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/10_genome_annotation_prokka.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/10_genome_annotation_prokka.ipynb)
 - **Use**: Bacterial genome annotation
 
 #### 🧪 **Protein Structure Prediction (ESM3)**
 - **Tool**: ESM3 structure prediction
 - **Notebook**: [`notebooks/tools/11_protein_structure_esm3.ipynb`](notebooks/tools/11_protein_structure_esm3.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/11_protein_structure_esm3.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/11_protein_structure_esm3.ipynb)
 - **Use**: Individual protein structure prediction
 
 #### 📊 **Structure Alignment (DALI)**
 - **Tool**: DALI structure alignment
 - **Notebook**: [`notebooks/tools/12_structure_alignment_dali.ipynb`](notebooks/tools/12_structure_alignment_dali.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/12_structure_alignment_dali.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/12_structure_alignment_dali.ipynb)
 - **Use**: Protein structure comparison
 
 #### 🧬 **BGC Analysis (antiSMASH)**
 - **Tool**: antiSMASH BGC detection
 - **Notebook**: [`notebooks/tools/13_biosynthetic_cluster_antismash.ipynb`](notebooks/tools/13_biosynthetic_cluster_antismash.ipynb)
-- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/13_biosynthetic_cluster_antismash.ipynb)
+- **Colab**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/13_biosynthetic_cluster_antismash.ipynb)
 - **Use**: Antibiotic gene cluster analysis
 
 ### 3. **Analysis Tools** - Result Processing

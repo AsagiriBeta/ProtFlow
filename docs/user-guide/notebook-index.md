@@ -17,7 +17,7 @@
 - **处理**: Prokka注释 → ESM3结构预测 → DALI格式准备
 - **输出**: 带注释的蛋白质序列和DALI-ready的PDB文件
 - **使用场景**: 基因组学研究中快速获得结构信息
-- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/00_genome_annotation_to_structure.ipynb)
+- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/00_genome_annotation_to_structure.ipynb)
 
 #### `notebooks/core/01_protein_structure_prediction.ipynb`
 **蛋白质结构预测工作流程**
@@ -26,7 +26,7 @@
 - **处理**: ESM3模型预测 → 结构质量评估 → 结果可视化
 - **输出**: PDB结构文件和置信度评分
 - **使用场景**: 单个或批量蛋白质结构预测
-- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/01_protein_structure_prediction.ipynb)
+- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/01_protein_structure_prediction.ipynb)
 
 #### `notebooks/core/02_pocket_detection_p2rank.ipynb`
 **结合口袋检测工作流程**
@@ -35,7 +35,7 @@
 - **处理**: P2Rank算法检测 → 口袋排序 → 特征分析
 - **输出**: 口袋坐标、评分和可视化结果
 - **使用场景**: 药物靶点识别和结合位点分析
-- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/02_pocket_detection_p2rank.ipynb)
+- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/02_pocket_detection_p2rank.ipynb)
 
 #### `notebooks/core/03_ligand_docking_vina.ipynb`
 **分子对接工作流程**
@@ -44,7 +44,7 @@
 - **处理**: AutoDock Vina对接 → 结合亲和力计算 → 构象优化
 - **输出**: 对接构象和结合评分
 - **使用场景**: 药物筛选和结合机制研究
-- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/core/03_ligand_docking_vina.ipynb)
+- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/core/03_ligand_docking_vina.ipynb)
 
 ### 🛠️ 独立分析工具 (10-19)
 
@@ -57,7 +57,7 @@
 - **处理**: Prokka注释 → 基因预测 → 功能注释
 - **输出**: 注释后的GenBank文件和蛋白质序列
 - **使用场景**: 新测序基因组的初步分析
-- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/10_genome_annotation_prokka.ipynb)
+- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/10_genome_annotation_prokka.ipynb)
 
 #### `notebooks/tools/11_protein_structure_esm3.ipynb`
 **蛋白质结构预测工具 (ESM3)**
@@ -66,7 +66,7 @@
 - **处理**: ESM3模型推理 → 结构生成 → 质量评估
 - **输出**: PDB格式结构文件
 - **使用场景**: 单个蛋白质的结构预测
-- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/11_protein_structure_esm3.ipynb)
+- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/11_protein_structure_esm3.ipynb)
 
 #### `notebooks/tools/12_structure_alignment_dali.ipynb`
 **结构比对工具 (DALI)**
@@ -75,7 +75,7 @@
 - **处理**: DALI算法比对 → 相似性评分 → 结构叠加
 - **输出**: 比对结果和相似性矩阵
 - **使用场景**: 结构家族分析和进化研究
-- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/12_structure_alignment_dali.ipynb)
+- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/12_structure_alignment_dali.ipynb)
 
 #### `notebooks/tools/13_biosynthetic_cluster_antismash.ipynb`
 **抗生素合成基因簇分析工具 (antiSMASH)**
@@ -84,7 +84,7 @@
 - **处理**: antiSMASH检测 → BGC分类 → 产物预测
 - **输出**: BGC注释报告和基因簇序列
 - **使用场景**: 天然产物发现和抗生素研究
-- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/tools/13_biosynthetic_cluster_antismash.ipynb)
+- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/tools/13_biosynthetic_cluster_antismash.ipynb)
 
 ### 📊 结果分析工具 (20-29)
 
@@ -97,7 +97,7 @@
 - **处理**: 注释一致性分析 → 差异识别 → 质量评估
 - **输出**: 比较报告和一致性统计
 - **使用场景**: 注释质量评估和工具比较
-- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/analysis/20_cds_annotation_comparison.ipynb)
+- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/analysis/20_cds_annotation_comparison.ipynb)
 
 #### `notebooks/analysis/21_batch_structure_analysis.ipynb`
 **批量结构分析工具**
@@ -106,7 +106,7 @@
 - **处理**: 结构特征提取 → 统计分析 → 聚类分析
 - **输出**: 分析报告和可视化图表
 - **使用场景**: 结构组学研究和质量评估
-- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/main/notebooks/analysis/21_batch_structure_analysis.ipynb)
+- **Colab链接**: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/AsagiriBeta/ProtFlow/blob/master/notebooks/analysis/21_batch_structure_analysis.ipynb)
 
 ## 🎯 使用建议
 
