@@ -28,6 +28,9 @@ def __getattr__(name):
     elif name == "esm3_predict":
         from .prediction import esm3_predict
         return esm3_predict
+    elif name == "dali":
+        from .prediction import dali
+        return dali
     elif name == "p2rank":
         from .docking import p2rank
         return p2rank
@@ -52,6 +55,7 @@ __all__ = [
     "cds_comparison", 
     "reporting",
     "esm3_predict",
+    "dali",
     "p2rank",
     "vina_dock",
     "ligand_prep",
