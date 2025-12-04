@@ -33,7 +33,6 @@ from protflow.utils.logger import setup_logging, get_logger
 from protflow.utils.exceptions import ProtFlowError
 from protflow.utils.seq_parser import extract_proteins_from_gbk, filter_and_select
 from protflow.prediction.esm3_predict import load_esm3_small, predict_pdbs, clear_model_cache
-from protflow.prediction.dali import DaliAligner
 from protflow.docking.p2rank import ensure_p2rank, run_p2rank_on_pdbs
 from protflow.docking.ligand_prep import smiles_or_file_to_pdbqt
 from protflow.docking.vina_dock import run_vina
@@ -191,6 +190,9 @@ def main(argv=None) -> int:
         if args.dali:
             logger.info("Step 3.5: Running DALI structure alignment")
             try:
+                # Import DALI module only when needed
+                from protflow.prediction.dali import DaliAligner
+                
                 # Initialize DALI aligner
                 dali_output_dir = base / 'dali'
                 aligner = DaliAligner(

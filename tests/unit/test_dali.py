@@ -12,18 +12,33 @@ This test suite covers:
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
-import pytest
 
-# Import the module
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
+try:
+    import pytest
+except ImportError:
+    pytest = None
 
-from protflow.prediction.dali import (
-    DaliAligner,
-    DaliResult,
-    run_dali_alignment,
-    batch_align,
-)
+# Try to import from installed package first, fallback to local
+try:
+    from protflow.prediction.dali import (
+        DaliAligner,
+        DaliResult,
+        run_dali_alignment,
+        batch_align,
+    )
+except ImportError:
+    # Fallback for development - add src to path
+    import sys
+    src_path = Path(__file__).parent.parent.parent / 'src'
+    if src_path not in sys.path:
+        sys.path.insert(0, str(src_path))
+    
+    from protflow.prediction.dali import (
+        DaliAligner,
+        DaliResult,
+        run_dali_alignment,
+        batch_align,
+    )
 
 
 class TestDaliResult:

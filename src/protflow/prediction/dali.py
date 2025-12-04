@@ -72,7 +72,7 @@ class DaliAligner:
         results_list = aligner.align_batch([Path('p1.pdb'), Path('p2.pdb')])
     """
     
-    ONLINE_SERVER = "http://ekhidna2.biocenter.helsinki.fi/dali/"
+    ONLINE_SERVER = "https://ekhidna2.biocenter.helsinki.fi/dali/"
     DEFAULT_TIMEOUT = 300  # 5 minutes for online queries
     POLL_INTERVAL = 10  # Check status every 10 seconds
     
@@ -229,8 +229,30 @@ class DaliAligner:
         return results
     
     def _submit_online_job(self, query_structure: Path, database: str) -> str:
-        """Submit job to DALI online server."""
-        submit_url = f"{self.ONLINE_SERVER}api/submit"
+        """
+        Submit a job to the DALI online server.
+        
+        This method uploads a PDB file to the DALI server and initiates
+        a structure alignment job.
+        
+        Args:
+            query_structure: Path to the query PDB/CIF file
+            database: Database to search against (e.g., 'pdb25', 'pdb50')
+            
+        Returns:
+            Job ID string for tracking the submitted job
+            
+        Raises:
+            RuntimeError: If job submission fails after all retries
+            FileNotFoundError: If query_structure doesn't exist
+            
+        Example:
+            >>> job_id = self._submit_online_job(Path('protein.pdb'), 'pdb25')
+            >>> # job_id can be used to poll for results
+        """
+        from urllib.parse import urljoin
+        
+        submit_url = urljoin(self.ONLINE_SERVER, "api/submit")
         
         with open(query_structure, 'rb') as f:
             files = {'pdbfile': (query_structure.name, f, 'application/octet-stream')}
@@ -245,8 +267,16 @@ class DaliAligner:
                         timeout=30,
                     )
                     response.raise_for_status()
-                    result = response.json()
-                    return result['job_id']
+                    
+                    # Parse JSON response with error handling
+                    try:
+                        result = response.json()
+                        if 'job_id' not in result:
+                            raise RuntimeError("Server response missing 'job_id' field")
+                        return result['job_id']
+                    except (ValueError, KeyError) as e:
+                        raise RuntimeError(f"Invalid server response: {e}")
+                        
                 except requests.RequestException as e:
                     if attempt == self.max_retries - 1:
                         raise RuntimeError(f"Failed to submit DALI job: {e}")
@@ -254,22 +284,64 @@ class DaliAligner:
                     time.sleep(5)
     
     def _poll_online_results(self, job_id: str) -> Dict:
-        """Poll for job completion and retrieve results."""
-        status_url = f"{self.ONLINE_SERVER}api/status/{job_id}"
-        result_url = f"{self.ONLINE_SERVER}api/result/{job_id}"
+        """
+        Poll the DALI server for job completion and retrieve results.
+        
+        This method periodically checks the job status and waits for completion.
+        It implements a polling mechanism with timeout to avoid infinite waiting.
+        
+        Args:
+            job_id: The job ID returned by _submit_online_job()
+            
+        Returns:
+            Dictionary containing alignment results with structure:
+            {
+                'hits': [
+                    {'pdbid': str, 'z': float, 'rmsd': float, 'lali': int, ...},
+                    ...
+                ]
+            }
+            
+        Raises:
+            TimeoutError: If job doesn't complete within the configured timeout
+            RuntimeError: If job fails on the server side
+            
+        Note:
+            - Polls every POLL_INTERVAL seconds (default: 10s)
+            - Total timeout is self.timeout seconds (default: 300s)
+        """
+        from urllib.parse import urljoin
+        
+        status_url = urljoin(self.ONLINE_SERVER, f"api/status/{job_id}")
+        result_url = urljoin(self.ONLINE_SERVER, f"api/result/{job_id}")
         
         start_time = time.time()
         while time.time() - start_time < self.timeout:
             try:
                 response = requests.get(status_url, timeout=10)
                 response.raise_for_status()
-                status = response.json()
+                
+                # Parse status with error handling
+                try:
+                    status = response.json()
+                    if 'status' not in status:
+                        logger.warning("Server response missing 'status' field")
+                        time.sleep(self.POLL_INTERVAL)
+                        continue
+                except ValueError as e:
+                    logger.warning(f"Invalid JSON in status response: {e}")
+                    time.sleep(self.POLL_INTERVAL)
+                    continue
                 
                 if status['status'] == 'completed':
                     # Fetch results
                     result_response = requests.get(result_url, timeout=30)
                     result_response.raise_for_status()
-                    return result_response.json()
+                    try:
+                        return result_response.json()
+                    except ValueError as e:
+                        raise RuntimeError(f"Invalid JSON in result response: {e}")
+                        
                 elif status['status'] == 'failed':
                     raise RuntimeError(f"DALI job failed: {status.get('error', 'Unknown error')}")
                 
