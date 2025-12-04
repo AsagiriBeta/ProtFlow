@@ -11,7 +11,7 @@ Author: ProtFlow Contributors
 """
 
 import logging
-import shutil
+import os
 import subprocess
 import tempfile
 import time
@@ -78,7 +78,7 @@ class DaliAligner:
     DEFAULT_TIMEOUT = 300  # 5 minutes for online queries
     POLL_INTERVAL = 10  # Check status every 10 seconds
     
-    def __init__(
+    ENV_TRUE_VALUES = {"1", "true", "yes", "on"}
         self,
         mode: str = 'auto',
         dali_cmd: Optional[Union[str, Path]] = None,
@@ -108,17 +108,17 @@ class DaliAligner:
         self.max_retries = max_retries
         
         # Validate setup
-        if self.mode == 'local' and not self._check_local_dali():
-            raise RuntimeError("Local DALI not available. Install DALI or use online mode.")
-        
-        logger.info(f"DALI aligner initialized in {self.mode} mode")
-    
-    def _find_dali_cmd(self) -> Optional[Path]:
-        """Find dali.pl in PATH."""
-        dali_path = shutil.which("dali.pl")
-        if dali_path:
-            return Path(dali_path)
-        # Check common locations
+        self.force_online = self._env_flag("PROTFLOW_DALI_FORCE_ONLINE")
+        self.force_local = self._env_flag("PROTFLOW_DALI_FORCE_LOCAL")
+        self.skip_online_probe = self._env_flag("PROTFLOW_DALI_SKIP_ONLINE_PROBE")
+        self._online_status_codes = self._parse_status_codes(
+            os.getenv("PROTFLOW_DALI_ACCEPT_STATUS")
+        )
+        self._user_agent = os.getenv("PROTFLOW_DALI_USER_AGENT", "ProtFlow-DaliAligner/1.0")
+        if self.force_local and self.force_online:
+            logger.warning(
+                "Both PROTFLOW_DALI_FORCE_LOCAL and PROTFLOW_DALI_FORCE_ONLINE are set; prioritizing local mode"
+            )
         common_paths = [
             Path("/usr/local/bin/dali.pl"),
             Path("/opt/dali/dali.pl"),
@@ -159,31 +159,31 @@ class DaliAligner:
         database: str = "pdb25",
         output_name: Optional[str] = None,
     ) -> List[DaliResult]:
-        """
-        Align a query structure against a database.
-        
+        if self.skip_online_probe:
+            logger.info("Skipping online DALI availability probe (PROTFLOW_DALI_SKIP_ONLINE_PROBE=1)")
+            return True
         Args:
-            query_structure: Path to PDB/CIF structure file
-            database: Database to search against (for online: pdb25, pdb50, pdb90, pdb100)
-            output_name: Name for output files (default: query filename stem)
-            
-        Returns:
-            List of DaliResult objects sorted by Z-score
-        """
-        if not query_structure.exists():
-            raise FileNotFoundError(f"Query structure not found: {query_structure}")
-        
-        output_name = output_name or query_structure.stem
-        
-        # Determine actual mode to use
-        actual_mode = self._determine_mode()
-        
-        if actual_mode == 'online':
-            return self._align_online(query_structure, database, output_name)
-        else:
-            return self._align_local(query_structure, output_name)
-    
-    def _determine_mode(self) -> str:
+            response = requests.get(
+                self.ONLINE_SERVER,
+                timeout=10,
+                headers={"User-Agent": self._user_agent},
+                allow_redirects=True,
+            )
+            if response.status_code in self._online_status_codes:
+                logger.debug(
+                    "Online DALI responded with acceptable status %s", response.status_code
+                )
+                return True
+            snippet = response.text[:200].strip().replace("\n", " ")
+            logger.warning(
+                "Online DALI probe returned status %s (allowed %s). Snippet: %s",
+                response.status_code,
+                sorted(self._online_status_codes),
+                snippet,
+            )
+            return False
+
+            logger.warning("Online DALI server not accessible: %s", e)
         """Determine which mode to actually use based on availability."""
         if self.mode == 'online':
             if not self._check_online_availability():
@@ -218,37 +218,37 @@ class DaliAligner:
         job_id = self._submit_online_job(query_structure, database)
         
         # Poll for results
-        logger.info(f"Job submitted with ID: {job_id}. Waiting for completion...")
-        results_data = self._poll_online_results(job_id)
-        
-        # Parse and save results
-        results = self._parse_online_results(results_data, output_name)
-        
-        # Save results locally
-        self._save_results(results, output_name)
-        
-        logger.info(f"Found {len(results)} alignments for {query_structure.name}")
+        if self.force_local:
+            if not self._check_local_dali():
+                raise RuntimeError(
+                    "PROTFLOW_DALI_FORCE_LOCAL=1 but local DALI command is not available"
+                )
+            logger.info("Forcing local DALI via PROTFLOW_DALI_FORCE_LOCAL")
+            return 'local'
+        if self.force_online:
+            logger.info("Forcing online DALI via PROTFLOW_DALI_FORCE_ONLINE")
+            return 'online'
         return results
     
-    def _submit_online_job(self, query_structure: Path, database: str) -> str:
-        """
-        Submit a job to the DALI online server.
-        
-        This method uploads a PDB file to the DALI server and initiates
+                raise RuntimeError(
+                    "Online DALI server not available. Set PROTFLOW_DALI_SKIP_ONLINE_PROBE=1 if the service is reachable from your network."
+                )
+
+        if self.mode == 'local':
         a structure alignment job.
-        
-        Args:
-            query_structure: Path to the query PDB/CIF file
-            database: Database to search against (e.g., 'pdb25', 'pdb50')
-            
-        Returns:
-            Job ID string for tracking the submitted job
-            
-        Raises:
-            RuntimeError: If job submission fails after all retries
-            FileNotFoundError: If query_structure doesn't exist
-            
-        Example:
+        # auto mode
+        if self._check_online_availability():
+            logger.info("Using online DALI server")
+            return 'online'
+        if self._check_local_dali():
+            logger.info("Falling back to local DALI")
+            return 'local'
+        guidance = (
+            "Neither online nor local DALI available. "
+            "Set PROTFLOW_DALI_FORCE_ONLINE=1 or PROTFLOW_DALI_SKIP_ONLINE_PROBE=1 to bypass the probe, "
+            "or install local DALI and ensure dali.pl is on PATH."
+        )
+        raise RuntimeError(guidance)
             >>> job_id = self._submit_online_job(Path('protein.pdb'), 'pdb25')
             >>> # job_id can be used to poll for results
         """
@@ -517,29 +517,29 @@ class DaliAligner:
                 all_results.append((query.stem, results))
             except Exception as e:
                 logger.error(f"Failed to process {query.name}: {e}")
-                all_results.append((query.stem, []))
-        
-        return all_results
-    
-    def summarize_results(
-        self,
-        results_list: List[Tuple[str, List[DaliResult]]],
-        top_n: int = 10,
-    ) -> Optional['pd.DataFrame']:
-        """
-        Create a summary DataFrame from batch results.
-        
-        Args:
-            results_list: List of (query_name, results) tuples
-            top_n: Number of top hits to include per query
-            
-        Returns:
-            DataFrame with all results, or None if pandas not available
-        """
-        if not HAS_PANDAS:
-            logger.warning("pandas not available, cannot create summary DataFrame")
-            return None
-        
+         """Save results to CSV and TSV files."""
+         if not results:
+             logger.warning("No results to save")
+             return
+         
+         output_path = self.output_dir / f"{output_name}_results.csv"
+         
+         if HAS_PANDAS:
+             df = pd.DataFrame([r.to_dict() for r in results])
+             df.to_csv(output_path, index=False)
+             logger.info(f"Results saved to {output_path}")
+         else:
+             # Fallback to manual CSV writing
+             with open(output_path, 'w') as f:
+                 # Write header
+                 f.write("query,target_pdb,rank,z_score,rmsd,lali,nres,identity\n")
+                 # Write data
+                 for r in results:
+                     f.write(
+                         f"{r.query_name},{r.target_pdb},{r.rank},"
+                         f"{r.z_score},{r.rmsd},{r.lali},{r.nres},{r.identity}\n"
+                     )
+             logger.info(f"Results saved to {output_path}")
         all_data = []
         for query_name, results in results_list:
             for result in results[:top_n]:
@@ -602,5 +602,25 @@ def batch_align(
         logger.warning(f"No structures found matching {pattern} in {structures_dir}")
         return []
     
-    aligner = DaliAligner(mode=mode, output_dir=output_dir)
-    return aligner.align_batch(structures)
+    @classmethod
+    def _env_flag(cls, name: str, default: bool = False) -> bool:
+        value = os.getenv(name)
+        if value is None:
+            return default
+        return value.strip().lower() in cls.ENV_TRUE_VALUES
+    
+    @staticmethod
+    def _parse_status_codes(raw: Optional[str]) -> set:
+        codes = {200}
+        if not raw:
+            return codes
+        for chunk in raw.split(','):
+            chunk = chunk.strip()
+            if not chunk:
+                continue
+            try:
+                codes.add(int(chunk))
+            except ValueError:
+                logger.warning("Ignoring invalid status code '%s' in PROTFLOW_DALI_ACCEPT_STATUS", chunk)
+        return codes
+
