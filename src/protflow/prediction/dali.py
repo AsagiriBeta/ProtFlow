@@ -4,7 +4,7 @@ DALI Structure Alignment Module
 Provides support for both online DALI server and local DALI installation.
 Supports batch processing, result parsing, and automatic mode fallback.
 
-Online DALI Server: http://ekhidna2.biocenter.helsinki.fi/dali/
+Online DALI Server: https://ekhidna2.biocenter.helsinki.fi/dali/
 Local DALI: Requires dali.pl or equivalent installed locally
 
 Author: ProtFlow Contributors
@@ -18,6 +18,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
+from urllib.parse import urljoin
+
 import requests
 
 try:
@@ -250,8 +252,6 @@ class DaliAligner:
             >>> job_id = self._submit_online_job(Path('protein.pdb'), 'pdb25')
             >>> # job_id can be used to poll for results
         """
-        from urllib.parse import urljoin
-        
         submit_url = urljoin(self.ONLINE_SERVER, "api/submit")
         
         with open(query_structure, 'rb') as f:
@@ -271,11 +271,13 @@ class DaliAligner:
                     # Parse JSON response with error handling
                     try:
                         result = response.json()
-                        if 'job_id' not in result:
-                            raise RuntimeError("Server response missing 'job_id' field")
-                        return result['job_id']
-                    except (ValueError, KeyError) as e:
-                        raise RuntimeError(f"Invalid server response: {e}")
+                    except (ValueError, requests.exceptions.JSONDecodeError) as e:
+                        raise RuntimeError(f"Invalid JSON in server response: {e}")
+                    
+                    if 'job_id' not in result:
+                        raise RuntimeError("Server response missing 'job_id' field")
+                    
+                    return result['job_id']
                         
                 except requests.RequestException as e:
                     if attempt == self.max_retries - 1:
@@ -310,8 +312,6 @@ class DaliAligner:
             - Polls every POLL_INTERVAL seconds (default: 10s)
             - Total timeout is self.timeout seconds (default: 300s)
         """
-        from urllib.parse import urljoin
-        
         status_url = urljoin(self.ONLINE_SERVER, f"api/status/{job_id}")
         result_url = urljoin(self.ONLINE_SERVER, f"api/result/{job_id}")
         
@@ -324,12 +324,13 @@ class DaliAligner:
                 # Parse status with error handling
                 try:
                     status = response.json()
-                    if 'status' not in status:
-                        logger.warning("Server response missing 'status' field")
-                        time.sleep(self.POLL_INTERVAL)
-                        continue
-                except ValueError as e:
+                except (ValueError, requests.exceptions.JSONDecodeError) as e:
                     logger.warning(f"Invalid JSON in status response: {e}")
+                    time.sleep(self.POLL_INTERVAL)
+                    continue
+                
+                if 'status' not in status:
+                    logger.warning("Server response missing 'status' field")
                     time.sleep(self.POLL_INTERVAL)
                     continue
                 
@@ -339,7 +340,7 @@ class DaliAligner:
                     result_response.raise_for_status()
                     try:
                         return result_response.json()
-                    except ValueError as e:
+                    except (ValueError, requests.exceptions.JSONDecodeError) as e:
                         raise RuntimeError(f"Invalid JSON in result response: {e}")
                         
                 elif status['status'] == 'failed':
