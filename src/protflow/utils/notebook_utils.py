@@ -290,9 +290,10 @@ def load_protflow_config(config_path: Optional[Path] = None) -> 'ProtFlowConfig'
         ProtFlowConfig instance
         
     Example:
-        >>> from protflow.utils import load_protflow_config
+        >>> from protflow.utils.notebook_utils import load_protflow_config
         >>> config = load_protflow_config()
-        >>> print(config.esm3_model)
+        >>> print(config.base_dir)  # Access configuration attributes
+        >>> print(config.esm3_model)  # ESM3 model name
     """
     from protflow.utils.config import ProtFlowConfig
     
