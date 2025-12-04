@@ -166,11 +166,17 @@ jupyter lab notebooks/
 
 ### CLI 流程
 ```bash
-# 完整流程：解析 → 预测 → 对接 → 报告
-python -m scripts.runner --parse-gbk --predict --p2rank --vina --report --smiles "CCO" --limit 5
+# 完整流程：解析 → 预测 → DALI 比对 → 对接 → 报告
+python -m scripts.runner --parse-gbk --predict --dali --p2rank --vina --report --smiles "CCO" --limit 5
+
+# Prokka → ESM3 → DALI 流程（推荐用于结构探索）
+python -m scripts.runner --parse-gbk --predict --dali --limit 10
 
 # 仅结构预测
 python -m scripts.runner --predict --limit 10
+
+# DALI 在线模式比对
+python -m scripts.runner --predict --dali --dali-mode online --dali-database pdb25
 
 # 使用自定义配体对接
 python -m scripts.runner --vina --ligand my_drug.mol2 --parallel
@@ -184,10 +190,16 @@ python -m scripts.runner --antismash --gbk-dir ./genomes
 # 工作流步骤（可任意组合）
 --parse-gbk          # 从 GenBank 文件提取蛋白质
 --predict            # 使用 ESM3 预测 3D 结构
+--dali               # 运行 DALI 结构比对（新功能！）
 --p2rank             # 检测结合口袋
 --vina               # 运行分子对接
 --report             # 生成 PDF 报告
 --antismash          # 运行 antiSMASH BGC 分析
+
+# DALI 选项
+--dali-mode MODE     # DALI 模式: online, local, auto（默认: auto）
+--dali-database DB   # 在线数据库: pdb25, pdb50, pdb90, pdb100（默认: pdb25）
+--dali-cmd PATH      # 本地 dali.pl 路径
 
 # 输入/输出
 --gbk-dir DIR        # GenBank 文件目录（默认: ./esm3_pipeline/gbk_input）

@@ -3,12 +3,18 @@
 CLI runner to execute selected steps of the pipeline.
 
 Examples:
-  # Run full pipeline
-  python -m scripts.runner --parse-gbk --predict --p2rank --vina --report \
+  # Run full pipeline with DALI
+  python -m scripts.runner --parse-gbk --predict --dali --p2rank --vina --report \
       --gbk-dir ./esm3_pipeline/gbk_input --smiles "CCO" --limit 5
 
-  # Just parse and predict
-  python -m scripts.runner --parse-gbk --predict --limit 10
+  # Just parse, predict, and align with DALI
+  python -m scripts.runner --parse-gbk --predict --dali --limit 10
+  
+  # Use DALI online mode with specific database
+  python -m scripts.runner --predict --dali --dali-mode online --dali-database pdb25
+
+  # Use DALI local mode
+  python -m scripts.runner --predict --dali --dali-mode local --dali-cmd /path/to/dali.pl
 
   # Use config file
   python -m scripts.runner --config protflow_config.json --predict --report
@@ -27,9 +33,11 @@ from protflow.utils.logger import setup_logging, get_logger
 from protflow.utils.exceptions import ProtFlowError
 from protflow.utils.seq_parser import extract_proteins_from_gbk, filter_and_select
 from protflow.prediction.esm3_predict import load_esm3_small, predict_pdbs, clear_model_cache
+from protflow.prediction.dali import DaliAligner
 from protflow.docking.p2rank import ensure_p2rank, run_p2rank_on_pdbs
 from protflow.docking.ligand_prep import smiles_or_file_to_pdbqt
 from protflow.docking.vina_dock import run_vina
+
 
 
 def main(argv=None) -> int:
@@ -53,10 +61,20 @@ def main(argv=None) -> int:
     # Pipeline steps
     ap.add_argument('--parse-gbk', action='store_true', help='Parse GenBank files')
     ap.add_argument('--predict', action='store_true', help='Run ESM3 structure prediction')
+    ap.add_argument('--dali', action='store_true', help='Run DALI structure alignment')
     ap.add_argument('--p2rank', action='store_true', help='Run P2Rank pocket detection')
     ap.add_argument('--vina', action='store_true', help='Run Vina docking')
     ap.add_argument('--report', action='store_true', help='Generate PDF report')
 
+    # DALI options
+    ap.add_argument('--dali-mode', type=str, default='auto',
+                   choices=['online', 'local', 'auto'],
+                   help='DALI mode: online, local, or auto (default: auto)')
+    ap.add_argument('--dali-database', type=str, default='pdb25',
+                   choices=['pdb25', 'pdb50', 'pdb90', 'pdb100'],
+                   help='DALI database for online mode (default: pdb25)')
+    ap.add_argument('--dali-cmd', type=Path, help='Path to dali.pl for local mode')
+    
     # Ligand options
     ap.add_argument('--smiles', type=str, default='', help='Ligand SMILES string')
     ap.add_argument('--ligand', type=Path, help='Path to ligand file')
@@ -167,6 +185,55 @@ def main(argv=None) -> int:
             # Clear model from memory if not caching
             if not config.enable_cache:
                 clear_model_cache()
+
+        # Step: DALI structure alignment
+        dali_summary = None
+        if args.dali:
+            logger.info("Step 3.5: Running DALI structure alignment")
+            try:
+                # Initialize DALI aligner
+                dali_output_dir = base / 'dali'
+                aligner = DaliAligner(
+                    mode=args.dali_mode,
+                    dali_cmd=args.dali_cmd,
+                    output_dir=dali_output_dir,
+                    timeout=600,  # 10 minutes timeout
+                )
+                
+                # Find all PDB files
+                pdb_files = sorted(pdb_dir.glob('*.pdb'))
+                if not pdb_files:
+                    logger.warning("No PDB files found for DALI alignment")
+                else:
+                    logger.info(f"Aligning {len(pdb_files)} structures...")
+                    
+                    # Batch align
+                    batch_results = aligner.align_batch(
+                        query_structures=pdb_files,
+                        database=args.dali_database,
+                    )
+                    
+                    # Create summary
+                    dali_summary = aligner.summarize_results(batch_results, top_n=10)
+                    
+                    if dali_summary is not None and not dali_summary.empty:
+                        dali_csv = base / 'dali_summary.csv'
+                        dali_summary.to_csv(dali_csv, index=False)
+                        logger.info(f"✓ DALI alignment complete, found {len(dali_summary)} matches")
+                        logger.info(f"  Results saved to {dali_csv}")
+                        
+                        # Log top hits
+                        top_hits = dali_summary.nlargest(5, 'z_score')
+                        logger.info("  Top 5 matches:")
+                        for _, row in top_hits.iterrows():
+                            logger.info(f"    {row['query']} → {row['target_pdb']} "
+                                      f"(Z={row['z_score']:.2f}, RMSD={row['rmsd']:.2f})")
+                    else:
+                        logger.warning("No DALI results generated")
+                        
+            except Exception as e:
+                logger.error(f"DALI alignment failed: {e}")
+                logger.debug(f"Details: {e}", exc_info=True)
 
         # Step: P2Rank
         pockets_df = None

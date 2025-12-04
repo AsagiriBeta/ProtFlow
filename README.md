@@ -181,11 +181,17 @@ See `.env.example` for configuration options.
 
 ### CLI Pipeline
 ```bash
-# Full pipeline: parse → predict → dock → report
-python -m scripts.runner --parse-gbk --predict --p2rank --vina --report --smiles "CCO" --limit 5
+# Full pipeline: parse → predict → DALI alignment → dock → report
+python -m scripts.runner --parse-gbk --predict --dali --p2rank --vina --report --smiles "CCO" --limit 5
+
+# Prokka → ESM3 → DALI workflow (recommended for structure exploration)
+python -m scripts.runner --parse-gbk --predict --dali --limit 10
 
 # Structure prediction only
 python -m scripts.runner --predict --limit 10
+
+# DALI online alignment
+python -m scripts.runner --predict --dali --dali-mode online --dali-database pdb25
 
 # Docking with custom ligand
 python -m scripts.runner --vina --ligand my_drug.mol2 --parallel
@@ -199,10 +205,16 @@ python -m scripts.runner --antismash --gbk-dir ./genomes
 # Workflow steps (run any combination)
 --parse-gbk          # Extract proteins from GenBank files
 --predict            # Predict 3D structures with ESM3
+--dali               # Run DALI structure alignment (NEW!)
 --p2rank             # Detect binding pockets
 --vina               # Run molecular docking
 --report             # Generate PDF report
 --antismash          # Run antiSMASH BGC analysis
+
+# DALI Options
+--dali-mode MODE     # DALI mode: online, local, auto (default: auto)
+--dali-database DB   # Online database: pdb25, pdb50, pdb90, pdb100 (default: pdb25)
+--dali-cmd PATH      # Path to local dali.pl
 
 # Input/Output
 --gbk-dir DIR        # GenBank files directory (default: ./esm3_pipeline/gbk_input)
