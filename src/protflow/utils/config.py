@@ -24,6 +24,9 @@ class ProtFlowConfig:
     esm3_model: str = 'esm3-sm-open-v1'
     esm3_device: Optional[str] = None  # auto-detect if None
     esm3_num_steps: int = 8
+    esm3_temperature: Optional[float] = None  # None = use model default (~0.7 for sequence)
+    esm3_track: str = 'structure'  # 'sequence', 'structure', or 'function'
+    esm3_precision: str = 'bf16'  # 'bf16', 'fp16', 'fp32'
 
     # Sequence filtering
     min_seq_length: int = 50

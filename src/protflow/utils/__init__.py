@@ -5,6 +5,11 @@ from .exceptions import *
 from .logger import *
 from .seq_parser import *
 from .notebook_utils import *
+from .prokka_utils import (
+    install_micromamba,
+    ensure_conda_with_auto_install,
+    ensure_prokka_available
+)
 
 __all__ = [
     # Config
@@ -35,4 +40,8 @@ __all__ = [
     "ESM3_PACKAGES",
     "VISUALIZATION_PACKAGES",
     "NOTEBOOK_PACKAGES",
+    # Prokka utilities
+    "install_micromamba",
+    "ensure_conda_with_auto_install",
+    "ensure_prokka_available",
 ]

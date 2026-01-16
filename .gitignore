@@ -1,31 +1,31 @@
-# ProtFlow Configuration Files
-
-*.pyc
+# Python
+*.py[cod]
 __pycache__/
-*.pyo
-*.pyd
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
+*.py[cod]
+*.so
 *.egg
+*.egg-info/
+dist/
+build/
+*.egg-info
+.eggs/
+*.whl
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
 
 # Virtual environments
 venv/
 ENV/
 env/
 .venv/
+conda/
+mamba/
+micromamba/
+.conda/
 
 # IDE
 .vscode/
@@ -34,42 +34,178 @@ env/
 *.swo
 *~
 .DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
 
 # Testing
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 .tox/
+.nox/
 coverage.xml
 *.cover
+.hypothesis/
+.pytest_cache/
 
-# Jupyter
-.ipynb_checkpoints
+# Jupyter Notebook
+.ipynb_checkpoints/
 *.ipynb_checkpoints
 *.ipynb.backup
 *.ipynb.bak
+.jupyter/
 
-# ProtFlow specific
-outputs/
+# ProtFlow Output Directories
+# Ignore all files in outputs, but keep .gitkeep
+outputs/*
+!outputs/.gitkeep
+outputs/**/*
+!outputs/**/.gitkeep
+
+# Data Directories (keep structure, ignore content)
+# Ignore all files in data subdirectories, but keep .gitkeep files
 data/inputs/*
-data/pdbs/*.pdb
-data/pdbs/*.pdbqt
+!data/inputs/.gitkeep
+data/inputs/**/*
+!data/inputs/**/.gitkeep
+data/pdbs/*
+!data/pdbs/.gitkeep
+data/pdbs/**/*
+!data/pdbs/**/.gitkeep
 data/outputs/*
+!data/outputs/.gitkeep
+data/outputs/**/*
+!data/outputs/**/.gitkeep
 data/antismash_out/*
-.cache/
+!data/antismash_out/.gitkeep
+data/antismash_out/**/*
+!data/antismash_out/**/.gitkeep
+
+# Notebooks data directories
+notebooks/**/data/*
+!notebooks/**/data/.gitkeep
+notebooks/**/data/**/*
+!notebooks/**/data/**/.gitkeep
+notebooks/**/outputs/*
+!notebooks/**/outputs/.gitkeep
+notebooks/**/outputs/**/*
+!notebooks/**/outputs/**/.gitkeep
+
+# Structure Files (PDB, CIF, ENT)
+*.pdb
+*.pdbqt
+*.cif
+*.ent
+*.mmcif
+
+# Sequence Files
 *.faa
 *.fasta
+*.fa
+*.fas
+*.seq
+
+# GenBank Files (keep examples, ignore user data)
+*.gbk
+*.gbff
+*.gb
+!**/example*.gbk
+!**/example*.gbff
+!**/test*.gbk
+!**/test*.gbff
+
+# Analysis Results
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.json
+!config/*.json
+!config/*.example.json
+!**/test*.csv
+!**/test*.json
+!**/example*.csv
+!**/example*.json
+
+# Model Cache
+.cache/
+models/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+.huggingface/
+transformers_cache/
 
 # P2Rank
 p2rank-*.zip
+p2rank/
+
+# DALI
+dali_ready/
+dali_output/
+*.dali
 
 # Logs
 *.log
 logs/
+*.out
+*.err
 
-# Config (keep examples)
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+.cache/
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Config Files (keep examples)
 protflow_config.json
 protflow_config.yaml
-!config.example.json
-!config.example.yaml
+protflow_config.yml
+!config/*.example.json
+!config/*.example.yaml
+!config/*.example.yml
+config/*.server.json
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Compressed Files
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+!p2rank-*.zip  # Already covered above
+
+# Large Data Files
+*.h5
+*.hdf5
+*.nc
+*.nc4
+
+# Backup Files
+*.backup
+*.old
+*_backup.*
+*_old.*
 

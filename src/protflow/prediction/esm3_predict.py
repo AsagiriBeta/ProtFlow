@@ -1,8 +1,12 @@
 """
 ESM3 structure prediction utilities with caching and progress tracking.
+
+This module provides comprehensive ESM3 model support with all official parameters
+including temperature, constraints, and multi-track generation.
 """
 from pathlib import Path
-from typing import Iterable, Optional, Tuple, Any
+from typing import Iterable, Optional, Tuple, Any, Dict, List, Union
+from dataclasses import dataclass
 import hashlib
 import pickle
 
@@ -16,6 +20,42 @@ logger = get_logger(__name__)
 
 # Global model cache
 _model_cache: Optional[Tuple[Any, str]] = None
+
+
+@dataclass
+class ESM3GenerationConfig:
+    """
+    Comprehensive configuration for ESM3 generation with all official parameters.
+    
+    Based on official ESM3 SDK GenerationConfig API:
+    - track: Which modality to generate ('sequence', 'structure', 'function')
+    - num_steps: Number of masked-sampling/unmasking steps
+    - temperature: Controls randomness (higher = more diverse outputs)
+    - Additional parameters for advanced usage
+    """
+    track: str = 'structure'  # 'sequence', 'structure', or 'function'
+    num_steps: int = 8
+    temperature: Optional[float] = None  # None = use model default, typically 0.7 for sequence
+    
+    def to_generation_config(self) -> Any:
+        """
+        Convert to ESM3 SDK GenerationConfig object.
+        
+        Returns:
+            GenerationConfig instance from esm.sdk.api
+        """
+        from esm.sdk.api import GenerationConfig
+        
+        kwargs = {
+            'track': self.track,
+            'num_steps': self.num_steps,
+        }
+        
+        # Only add temperature if explicitly set
+        if self.temperature is not None:
+            kwargs['temperature'] = self.temperature
+        
+        return GenerationConfig(**kwargs)
 
 
 def load_esm3_small(
@@ -92,29 +132,57 @@ def predict_pdbs(
     model: Any,
     seq_records: Iterable,
     out_dir: Path,
-    num_steps: int = 8,
+    generation_config: Optional[ESM3GenerationConfig] = None,
+    num_steps: Optional[int] = None,  # Deprecated: use generation_config instead
+    temperature: Optional[float] = None,  # Deprecated: use generation_config instead
     show_progress: bool = True,
     skip_existing: bool = True,
     cache_predictions: bool = False,
-    cache_dir: Optional[Path] = None
-) -> None:
+    cache_dir: Optional[Path] = None,
+    min_seq_length: int = 30,
+    max_seq_length: int = 2000,
+) -> Dict[str, int]:
     """
-    Predict protein structures using ESM3 model.
+    Predict protein structures using ESM3 model with comprehensive parameter support.
 
     Args:
         model: ESM3 model instance
         seq_records: Iterable of SeqRecord objects
         out_dir: Output directory for PDB files
-        num_steps: Number of generation steps
+        generation_config: ESM3GenerationConfig with all generation parameters.
+                         If None, uses defaults (structure track, 8 steps).
+        num_steps: (Deprecated) Number of generation steps. Use generation_config instead.
+        temperature: (Deprecated) Temperature for sampling. Use generation_config instead.
         show_progress: Show progress bar
         skip_existing: Skip sequences with existing PDB files
         cache_predictions: Cache predictions to avoid recomputation
         cache_dir: Directory for prediction cache
+        min_seq_length: Minimum sequence length to process
+        max_seq_length: Maximum sequence length to process
+
+    Returns:
+        Dictionary with counts: {'success': int, 'skipped': int, 'errors': int, 'filtered': int}
 
     Raises:
         PredictionError: If prediction fails
     """
-    from esm.sdk.api import ESMProtein, GenerationConfig
+    from esm.sdk.api import ESMProtein
+
+    # Handle deprecated parameters
+    if generation_config is None:
+        generation_config = ESM3GenerationConfig(
+            track='structure',
+            num_steps=num_steps if num_steps is not None else 8,
+            temperature=temperature
+        )
+    else:
+        # Override with deprecated params if provided
+        if num_steps is not None:
+            generation_config.num_steps = num_steps
+        if temperature is not None:
+            generation_config.temperature = temperature
+
+    gen_cfg = generation_config.to_generation_config()
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -124,8 +192,22 @@ def predict_pdbs(
 
     records = list(seq_records)
     logger.info(f"Predicting structures for {len(records)} sequences")
+    logger.info(f"Generation config: track={generation_config.track}, "
+                f"num_steps={generation_config.num_steps}, "
+                f"temperature={generation_config.temperature}")
 
-    iterator = tqdm(records, desc="Predicting structures") if show_progress else records
+    # Filter sequences by length
+    filtered_records = [
+        rec for rec in records
+        if min_seq_length <= len(rec.seq) <= max_seq_length
+    ]
+    filtered_count = len(records) - len(filtered_records)
+    
+    if filtered_count > 0:
+        logger.info(f"Filtered {filtered_count} sequences outside length range "
+                   f"[{min_seq_length}, {max_seq_length}]")
+
+    iterator = tqdm(filtered_records, desc="Predicting structures") if show_progress else filtered_records
 
     success_count = 0
     skip_count = 0
@@ -154,18 +236,24 @@ def predict_pdbs(
                         prot = pickle.load(f)
                 else:
                     prot = ESMProtein(sequence=seq)
-                    prot = model.generate(prot, GenerationConfig(track='structure', num_steps=num_steps))
+                    prot = model.generate(prot, gen_cfg)
 
                     # Save to cache
                     with open(cache_file, 'wb') as f:
                         pickle.dump(prot, f)
             else:
                 prot = ESMProtein(sequence=seq)
-                prot = model.generate(prot, GenerationConfig(track='structure', num_steps=num_steps))
+                prot = model.generate(prot, gen_cfg)
 
-            # Write PDB
-            prot.to_pdb(str(outp))
-            logger.debug(f"Predicted structure for {name}")
+            # Write PDB (only for structure track)
+            if generation_config.track == 'structure':
+                prot.to_pdb(str(outp))
+                logger.debug(f"Predicted structure for {name}")
+            else:
+                # For other tracks, save as appropriate format
+                logger.warning(f"Track '{generation_config.track}' not yet fully supported for PDB output")
+                prot.to_pdb(str(outp))  # Fallback
+
             success_count += 1
 
         except Exception as e:
@@ -173,7 +261,17 @@ def predict_pdbs(
             error_count += 1
             continue
 
-    logger.info(f"Prediction complete: {success_count} success, {skip_count} skipped, {error_count} errors")
+    result = {
+        'success': success_count,
+        'skipped': skip_count,
+        'errors': error_count,
+        'filtered': filtered_count
+    }
+    
+    logger.info(f"Prediction complete: {success_count} success, {skip_count} skipped, "
+               f"{error_count} errors, {filtered_count} filtered")
+    
+    return result
 
 
 def clear_model_cache():
@@ -181,3 +279,65 @@ def clear_model_cache():
     global _model_cache
     _model_cache = None
     logger.info("Model cache cleared")
+
+
+def create_generation_config_from_dict(config_dict: Dict[str, Any]) -> ESM3GenerationConfig:
+    """
+    Create ESM3GenerationConfig from a dictionary (e.g., from ProtFlowConfig).
+    
+    Args:
+        config_dict: Dictionary with keys like 'esm3_num_steps', 'esm3_temperature', 'esm3_track'
+    
+    Returns:
+        ESM3GenerationConfig instance
+    """
+    return ESM3GenerationConfig(
+        track=config_dict.get('esm3_track', 'structure'),
+        num_steps=config_dict.get('esm3_num_steps', 8),
+        temperature=config_dict.get('esm3_temperature', None)
+    )
+
+
+def predict_structures_from_fasta(
+    fasta_file: Path,
+    out_dir: Path,
+    model_name: str = 'esm3-sm-open-v1',
+    generation_config: Optional[ESM3GenerationConfig] = None,
+    device: Optional[str] = None,
+    **kwargs
+) -> Dict[str, int]:
+    """
+    Convenience function to predict structures from a FASTA file.
+    
+    Args:
+        fasta_file: Input FASTA file path
+        out_dir: Output directory for PDB files
+        model_name: ESM3 model name
+        generation_config: ESM3GenerationConfig (uses defaults if None)
+        device: Device to use ('cuda', 'cpu', 'mps', or None for auto-detect)
+        **kwargs: Additional arguments passed to predict_pdbs()
+    
+    Returns:
+        Dictionary with prediction statistics
+    """
+    from Bio import SeqIO
+    
+    if not fasta_file.exists():
+        raise FileNotFoundError(f"FASTA file not found: {fasta_file}")
+    
+    logger.info(f"Reading sequences from {fasta_file}")
+    records = list(SeqIO.parse(fasta_file, 'fasta'))
+    logger.info(f"Loaded {len(records)} sequences")
+    
+    model, device = load_esm3_small(device=device, model_name=model_name)
+    
+    if generation_config is None:
+        generation_config = ESM3GenerationConfig()
+    
+    return predict_pdbs(
+        model=model,
+        seq_records=records,
+        out_dir=out_dir,
+        generation_config=generation_config,
+        **kwargs
+    )

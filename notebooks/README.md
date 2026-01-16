@@ -8,8 +8,7 @@
 notebooks/
 ├── core/           # 核心工作流 (00-09)
 ├── tools/          # 单独工具 (10-19)
-├── analysis/       # 分析工具 (20-29)
-└── templates/      # 初始化模板
+└── analysis/       # 分析工具 (20-29)
 ```
 
 ## 🚀 快速开始
@@ -26,22 +25,16 @@ notebooks/
 
 ### 2. 创建新的 Notebook
 
-从 `templates/` 目录复制适当的初始化模板：
+参考现有 notebook 的初始化代码：
 
 **对于 ESM3 结构预测 notebook：**
-```python
-# 复制 templates/esm3_notebook_init.py 的内容到第一个代码单元格
-```
+- 参考 `core/01_protein_structure_prediction.ipynb` 或 `tools/11_protein_structure_esm3.ipynb`
 
 **对于分析 notebook：**
-```python
-# 复制 templates/analysis_notebook_init.py 的内容到第一个代码单元格
-```
+- 参考 `analysis/21_batch_structure_analysis.ipynb`
 
 **对于使用 Conda 工具的 notebook：**
-```python
-# 复制 templates/conda_tool_notebook_init.py 的内容到第一个代码单元格
-```
+- 参考 `tools/10_genome_annotation_prokka.ipynb` 或 `tools/13_biosynthetic_cluster_antismash.ipynb`
 
 ## 📚 可用的 Notebooks
 
@@ -120,8 +113,7 @@ check_and_install_packages(['numpy', 'pandas', 'biopython'])
 如果你有旧的 notebook 需要更新：
 
 1. 查看 `docs/notebook-migration-guide.md` 获取详细指南
-2. 参考 `templates/` 中的模板
-3. 查看已更新的 notebooks 作为示例（如 `analysis/20_*.ipynb`）
+2. 参考已更新的 notebooks 作为示例（如 `analysis/20_*.ipynb`）
 
 ### 简要步骤：
 
@@ -131,7 +123,7 @@ check_and_install_packages(['numpy', 'pandas', 'biopython'])
    - 重复的导入语句
 
 2. **添加新的初始化单元格**
-   - 从 `templates/` 复制适当的模板
+   - 参考现有 notebook 的初始化代码
    - 根据需要自定义 `work_dir_name`
 
 3. **使用 src 中的代码**
@@ -140,7 +132,7 @@ check_and_install_packages(['numpy', 'pandas', 'biopython'])
 
 ## 💡 最佳实践
 
-1. **始终使用模板**：从 `templates/` 开始新的 notebook
+1. **参考现有notebook**：创建新notebook时参考类似的现有notebook
 2. **重用代码**：将通用函数放在 `src/protflow/` 中
 3. **保持简洁**：notebook 应关注工作流程，不是实现细节
 4. **文档化**：添加 markdown 单元格解释每个步骤

@@ -79,6 +79,8 @@ class DaliAligner:
     POLL_INTERVAL = 10  # Check status every 10 seconds
     
     ENV_TRUE_VALUES = {"1", "true", "yes", "on"}
+    
+    def __init__(
         self,
         mode: str = 'auto',
         dali_cmd: Optional[Union[str, Path]] = None,
@@ -119,6 +121,31 @@ class DaliAligner:
             logger.warning(
                 "Both PROTFLOW_DALI_FORCE_LOCAL and PROTFLOW_DALI_FORCE_ONLINE are set; prioritizing local mode"
             )
+    
+    @classmethod
+    def _env_flag(cls, name: str, default: bool = False) -> bool:
+        value = os.getenv(name)
+        if value is None:
+            return default
+        return value.strip().lower() in cls.ENV_TRUE_VALUES
+    
+    @staticmethod
+    def _parse_status_codes(raw: Optional[str]) -> set:
+        codes = {200}
+        if not raw:
+            return codes
+        for chunk in raw.split(','):
+            chunk = chunk.strip()
+            if not chunk:
+                continue
+            try:
+                codes.add(int(chunk))
+            except ValueError:
+                logger.warning("Ignoring invalid status code '%s' in PROTFLOW_DALI_ACCEPT_STATUS", chunk)
+        return codes
+    
+    def _find_dali_cmd(self) -> Optional[Path]:
+        """Find local DALI command."""
         common_paths = [
             Path("/usr/local/bin/dali.pl"),
             Path("/opt/dali/dali.pl"),
@@ -159,32 +186,44 @@ class DaliAligner:
         database: str = "pdb25",
         output_name: Optional[str] = None,
     ) -> List[DaliResult]:
-        if self.skip_online_probe:
-            logger.info("Skipping online DALI availability probe (PROTFLOW_DALI_SKIP_ONLINE_PROBE=1)")
-            return True
+        """
+        Align a structure using DALI.
+        
         Args:
-            response = requests.get(
-                self.ONLINE_SERVER,
-                timeout=10,
-                headers={"User-Agent": self._user_agent},
-                allow_redirects=True,
-            )
-            if response.status_code in self._online_status_codes:
-                logger.debug(
-                    "Online DALI responded with acceptable status %s", response.status_code
-                )
-                return True
-            snippet = response.text[:200].strip().replace("\n", " ")
-            logger.warning(
-                "Online DALI probe returned status %s (allowed %s). Snippet: %s",
-                response.status_code,
-                sorted(self._online_status_codes),
-                snippet,
-            )
-            return False
-
-            logger.warning("Online DALI server not accessible: %s", e)
+            query_structure: Path to query PDB file
+            database: Database to search (online mode)
+            output_name: Optional output name (default: query filename)
+            
+        Returns:
+            List of DaliResult objects
+        """
+        query_structure = Path(query_structure)
+        if not query_structure.exists():
+            raise FileNotFoundError(f"Query structure not found: {query_structure}")
+        
+        output_name = output_name or query_structure.stem
+        
+        # Determine which mode to use
+        actual_mode = self._determine_mode()
+        
+        if actual_mode == 'online':
+            return self._align_online(query_structure, database, output_name)
+        else:
+            return self._align_local(query_structure, output_name)
+    
+    def _determine_mode(self) -> str:
         """Determine which mode to actually use based on availability."""
+        if self.force_local:
+            if not self._check_local_dali():
+                raise RuntimeError(
+                    "PROTFLOW_DALI_FORCE_LOCAL=1 but local DALI command is not available"
+                )
+            logger.info("Forcing local DALI via PROTFLOW_DALI_FORCE_LOCAL")
+            return 'local'
+        if self.force_online:
+            logger.info("Forcing online DALI via PROTFLOW_DALI_FORCE_ONLINE")
+            return 'online'
+        
         if self.mode == 'online':
             if not self._check_online_availability():
                 raise RuntimeError("Online DALI server not available")
@@ -218,37 +257,28 @@ class DaliAligner:
         job_id = self._submit_online_job(query_structure, database)
         
         # Poll for results
-        if self.force_local:
-            if not self._check_local_dali():
-                raise RuntimeError(
-                    "PROTFLOW_DALI_FORCE_LOCAL=1 but local DALI command is not available"
-                )
-            logger.info("Forcing local DALI via PROTFLOW_DALI_FORCE_LOCAL")
-            return 'local'
-        if self.force_online:
-            logger.info("Forcing online DALI via PROTFLOW_DALI_FORCE_ONLINE")
-            return 'online'
+        results_data = self._poll_online_results(job_id)
+        
+        # Parse and return results
+        results = self._parse_online_results(results_data, output_name)
+        
+        # Save results
+        self._save_results(results, output_name)
+        
         return results
     
-                raise RuntimeError(
-                    "Online DALI server not available. Set PROTFLOW_DALI_SKIP_ONLINE_PROBE=1 if the service is reachable from your network."
-                )
-
-        if self.mode == 'local':
-        a structure alignment job.
-        # auto mode
-        if self._check_online_availability():
-            logger.info("Using online DALI server")
-            return 'online'
-        if self._check_local_dali():
-            logger.info("Falling back to local DALI")
-            return 'local'
-        guidance = (
-            "Neither online nor local DALI available. "
-            "Set PROTFLOW_DALI_FORCE_ONLINE=1 or PROTFLOW_DALI_SKIP_ONLINE_PROBE=1 to bypass the probe, "
-            "or install local DALI and ensure dali.pl is on PATH."
-        )
-        raise RuntimeError(guidance)
+    def _submit_online_job(self, query_structure: Path, database: str) -> str:
+        """
+        Submit a structure alignment job to the online DALI server.
+        
+        Args:
+            query_structure: Path to query PDB file
+            database: Database to search (e.g., 'pdb25')
+            
+        Returns:
+            Job ID string that can be used to poll for results
+            
+        Example:
             >>> job_id = self._submit_online_job(Path('protein.pdb'), 'pdb25')
             >>> # job_id can be used to poll for results
         """
@@ -517,29 +547,8 @@ class DaliAligner:
                 all_results.append((query.stem, results))
             except Exception as e:
                 logger.error(f"Failed to process {query.name}: {e}")
-         """Save results to CSV and TSV files."""
-         if not results:
-             logger.warning("No results to save")
-             return
-         
-         output_path = self.output_dir / f"{output_name}_results.csv"
-         
-         if HAS_PANDAS:
-             df = pd.DataFrame([r.to_dict() for r in results])
-             df.to_csv(output_path, index=False)
-             logger.info(f"Results saved to {output_path}")
-         else:
-             # Fallback to manual CSV writing
-             with open(output_path, 'w') as f:
-                 # Write header
-                 f.write("query,target_pdb,rank,z_score,rmsd,lali,nres,identity\n")
-                 # Write data
-                 for r in results:
-                     f.write(
-                         f"{r.query_name},{r.target_pdb},{r.rank},"
-                         f"{r.z_score},{r.rmsd},{r.lali},{r.nres},{r.identity}\n"
-                     )
-             logger.info(f"Results saved to {output_path}")
+        
+        return all_results
         all_data = []
         for query_name, results in results_list:
             for result in results[:top_n]:
@@ -552,6 +561,99 @@ class DaliAligner:
         df = df.sort_values(by='z_score', ascending=False)
         
         return df
+
+
+def prepare_pdb_for_dali(
+    pdb_files: List[Path],
+    output_dir: Path,
+    generate_mapping: bool = True
+) -> Path:
+    """
+    准备符合 DALI 输入标准的文件
+    
+    DALI 要求：
+    - 文件名格式：pdb<4字符ID>.ent
+    - 4字符ID由数字和大写字母组成
+    - 生成映射文件以追踪原始文件名
+    
+    Args:
+        pdb_files: PDB 文件路径列表
+        output_dir: 输出目录
+        generate_mapping: 是否生成映射文件
+    
+    Returns:
+        DALI 输出目录路径
+    """
+    import random
+    import string
+    from datetime import datetime
+    from tqdm import tqdm
+    import shutil
+    
+    output_dir = Path(output_dir)
+    output_dir.mkdir(exist_ok=True, parents=True)
+    
+    logger.info(f"准备 {len(pdb_files)} 个PDB文件用于DALI")
+    logger.info("DALI要求结构文件命名符合PDB数据库规范")
+    logger.info("正在转换文件名为：pdb<4字符ID>.ent 格式...")
+    
+    used_ids = set()
+    mapping = []
+    
+    for pdb_file in tqdm(pdb_files, desc="转换并复制文件"):
+        # 生成唯一的PDB ID
+        chars = string.digits + string.ascii_uppercase
+        while True:
+            new_id = ''.join(random.choices(chars, k=4))
+            if new_id not in used_ids:
+                used_ids.add(new_id)
+                break
+        
+        dali_name = f"pdb{new_id}.ent"
+        dest = output_dir / dali_name
+        
+        if not dest.exists():
+            shutil.copy2(pdb_file, dest)
+        
+        mapping.append((dali_name, pdb_file.name))
+    
+    # 创建文件列表
+    file_list = output_dir / "pdb_list.txt"
+    with open(file_list, 'w') as f:
+        for dali_name, _ in mapping:
+            f.write(f"{dali_name}\n")
+    
+    if generate_mapping:
+        # 创建映射文件
+        mapping_file = output_dir / "pdb_id_mapping.tsv"
+        with open(mapping_file, 'w') as f:
+            f.write("DALI_Name\tOriginal_Name\n")
+            for dali_name, orig_name in mapping:
+                f.write(f"{dali_name}\t{orig_name}\n")
+        
+        # 创建README
+        readme = output_dir / "README.txt"
+        with open(readme, 'w') as f:
+            f.write("DALI 输入文件\n")
+            f.write("="*60 + "\n\n")
+            f.write(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"PDB 文件数量: {len(pdb_files)}\n\n")
+            f.write("文件说明:\n")
+            f.write("  - pdb*.ent: 符合 DALI 命名标准的结构文件\n")
+            f.write("  - pdb_list.txt: DALI 格式文件名列表\n")
+            f.write("  - pdb_id_mapping.tsv: DALI 名称与原始名称的映射表\n\n")
+            f.write("使用说明:\n")
+            f.write("1. 所有 .ent 文件已转换为 DALI 兼容格式 (pdb<4字符>.ent)\n")
+            f.write("2. 使用 pdb_id_mapping.tsv 查找原始蛋白质名称\n")
+            f.write("3. 访问 DALI 服务器: http://ekhidna2.biocenter.helsinki.fi/dali/\n")
+            f.write("4. 上传 .ent 文件进行结构比对分析\n")
+            f.write("5. pdb_list.txt 包含所有可用于 DALI 的文件列表\n")
+    
+    logger.info(f"DALI文件准备完成: {output_dir}")
+    logger.info(f"文件数: {len(pdb_files)}")
+    logger.info(f"文件名格式: pdb<4字符ID>.ent")
+    
+    return output_dir
 
 
 def run_dali_alignment(
@@ -602,25 +704,14 @@ def batch_align(
         logger.warning(f"No structures found matching {pattern} in {structures_dir}")
         return []
     
-    @classmethod
-    def _env_flag(cls, name: str, default: bool = False) -> bool:
-        value = os.getenv(name)
-        if value is None:
-            return default
-        return value.strip().lower() in cls.ENV_TRUE_VALUES
+    aligner = DaliAligner(mode=mode, output_dir=output_dir)
+    results = []
+    for structure in structures:
+        try:
+            structure_results = aligner.align(structure, database='pdb25')
+            results.append((structure.name, structure_results))
+        except Exception as e:
+            logger.error(f"Failed to align {structure}: {e}")
     
-    @staticmethod
-    def _parse_status_codes(raw: Optional[str]) -> set:
-        codes = {200}
-        if not raw:
-            return codes
-        for chunk in raw.split(','):
-            chunk = chunk.strip()
-            if not chunk:
-                continue
-            try:
-                codes.add(int(chunk))
-            except ValueError:
-                logger.warning("Ignoring invalid status code '%s' in PROTFLOW_DALI_ACCEPT_STATUS", chunk)
-        return codes
+    return results
 
