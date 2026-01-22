@@ -151,7 +151,6 @@ class ProkkaESM3Pipeline:
         max_length: int = 400,
         min_length: int = 30,
         temperature: Optional[float] = None,
-        batch_size: Optional[int] = None,  # Batch size for ESM3 inference
     ) -> List[Path]:
         """
         使用 ESM3 预测蛋白质结构
@@ -164,9 +163,6 @@ class ProkkaESM3Pipeline:
             max_length: 最大序列长度
             min_length: 最小序列长度
             temperature: 温度参数（如果generation_config为None）
-            batch_size: Batch size for ESM3 inference (None = process individually)
-                       Larger batch sizes can improve GPU utilization but require more memory.
-                       Recommended: 4-16 for GPU, 1-4 for CPU.
         
         Returns:
             生成的 PDB 文件路径列表
@@ -205,8 +201,7 @@ class ProkkaESM3Pipeline:
             min_seq_length=min_length,
             max_seq_length=max_length,
             show_progress=True,
-            skip_existing=True,
-            batch_size=batch_size
+            skip_existing=True
         )
         
         # 获取生成的PDB文件

@@ -485,8 +485,8 @@ def generate_comprehensive_report(
             f.write(f"分析结构数: {n_structures}\n")
             
             if 'similarity_results' in similarity_data:
-            similarities = [r['similarity_score'] for r in similarity_data['similarity_results'] if r.get('status') == 'success']
-            rmsds = [r['rmsd'] for r in similarity_data['similarity_results'] if r.get('rmsd') is not None]
+                similarities = [r['similarity_score'] for r in similarity_data['similarity_results'] if r.get('status') == 'success']
+                rmsds = [r['rmsd'] for r in similarity_data['similarity_results'] if r.get('rmsd') is not None]
             
             if similarities:
                 f.write(f"平均相似性: {np.mean(similarities):.3f}\n")

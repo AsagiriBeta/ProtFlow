@@ -373,3 +373,86 @@ def setup_analysis_notebook(work_dir_name: str = 'analysis_runs') -> Dict[str, P
     print_environment_info(paths, verbose=False)
     
     return paths
+
+
+def init_notebook(
+    work_dir_name: str = 'notebook_runs',
+    packages: Optional[List[Union[str, Tuple[str, str]]]] = None,
+    colab_work_dir: Optional[str] = None
+) -> Dict[str, Path]:
+    """
+    统一的 notebook 初始化函数（推荐使用）
+    
+    自动完成：
+    1. 检测运行环境（Colab/本地）
+    2. 添加 protflow 到 Python 路径
+    3. 检查和安装依赖
+    4. 设置工作目录
+    
+    Args:
+        work_dir_name: 工作目录名称（本地环境）
+        packages: 需要安装的包列表，None 则使用 CORE_PACKAGES
+        colab_work_dir: Colab 环境的工作目录路径，None 则使用 /content/{work_dir_name}
+        
+    Returns:
+        包含路径的字典：PROJECT_ROOT, WORK_DIR, DATA_DIR, SRC_DIR
+        
+    Example:
+        >>> # 基础初始化
+        >>> paths = init_notebook('my_workflow')
+        >>> 
+        >>> # 带 ESM3 的初始化
+        >>> paths = init_notebook('esm3_workflow', packages=ESM3_PACKAGES)
+        >>> 
+        >>> # 使用路径
+        >>> WORK_DIR = paths['WORK_DIR']
+    """
+    import sys
+    from pathlib import Path
+    
+    # 检测环境
+    in_colab = 'google.colab' in sys.modules
+    
+    # 添加 protflow 到路径
+    project_root = Path.cwd()
+    while not (project_root / 'src' / 'protflow').exists() and project_root != project_root.parent:
+        project_root = project_root.parent
+    
+    if (project_root / 'src').exists():
+        src_dir = str(project_root / 'src')
+        if src_dir not in sys.path:
+            sys.path.insert(0, src_dir)
+        print(f"✓ protflow 路径: {src_dir}")
+    else:
+        raise RuntimeError("未找到 protflow 模块，请确保在项目根目录运行")
+    
+    # 设置工作目录
+    if in_colab:
+        if colab_work_dir is None:
+            colab_work_dir = f"/content/{work_dir_name}"
+        work_dir = Path(colab_work_dir)
+        work_dir.mkdir(exist_ok=True, parents=True)
+        data_dir = work_dir
+    else:
+        work_dir = project_root / work_dir_name
+        work_dir.mkdir(exist_ok=True, parents=True)
+        data_dir = project_root / 'data'
+    
+    # 安装依赖
+    if packages is None:
+        packages = CORE_PACKAGES
+    check_and_install_packages(packages)
+    
+    paths = {
+        'PROJECT_ROOT': project_root,
+        'WORK_DIR': work_dir,
+        'DATA_DIR': data_dir,
+        'SRC_DIR': project_root / 'src',
+    }
+    
+    print(f"\n✓ 环境初始化完成")
+    print(f"  工作目录: {paths['WORK_DIR']}")
+    if not in_colab:
+        print(f"  项目根目录: {paths['PROJECT_ROOT']}")
+    
+    return paths

@@ -1,0 +1,41 @@
+# Windows-optimized requirements
+# 此文件优先使用预构建的 wheel，避免编译问题
+# 如果标准 requirements.txt 安装失败，可以尝试此文件
+
+# Core runtime deps for ESM3-sm pipeline (Python >=3.12)
+# Note: 某些包可能需要从 conda-forge 安装以避免编译问题
+
+# 基础科学计算包（通常有预构建 wheel）
+numpy>=2.3.4
+pandas>=2.3.3
+biopython>=1.85
+matplotlib>=3.10.7
+scipy>=1.13
+
+# 网络和工具
+requests>=2.31
+tqdm>=4.67.1
+huggingface_hub>=1.0.0
+
+# 可视化
+py3Dmol>=2.5.3
+reportlab>=4.4.4
+
+# Notebook UI
+notebook>=7.4.7
+ipykernel>=7.0.1
+
+# PyTorch (Windows 自动安装)
+torch>=2.9.0; platform_system != 'Linux'
+
+# ESM - 注意：可能需要编译工具
+# 如果安装失败，尝试：
+# 1. 安装 Visual C++ Build Tools
+# 2. 或使用 conda: conda install -c conda-forge biotite
+# 3. 或跳过 biotite 相关功能
+esm>=3.2.1.post1
+
+# 如果 esm 安装失败，可以尝试分别安装其依赖：
+# transformers<4.48.2
+# tokenizers<0.11,>=0.10.1  # 可能需要 Rust，但通常有预构建 wheel
+# biotite>=1.0.0  # 需要 biotraj，可能需要 C++ 编译工具

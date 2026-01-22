@@ -1,6 +1,12 @@
 # Core runtime deps for ESM3-sm pipeline (Python >=3.12)
 # Note on PyTorch: install a CUDA/MPS build appropriate to your platform (see README)
 # On Linux (incl. Colab), we do NOT auto-install torch here to avoid clobbering GPU wheels.
+#
+# Windows Installation Notes:
+# - Some packages (tokenizers, biotraj) may require compilation tools
+# - If installation fails, try: pip install --upgrade pip setuptools wheel first
+# - Or use Conda: conda create -n protflow python=3.12 && conda activate protflow
+# - See WINDOWS_INSTALL_GUIDE.md for detailed instructions
 
 esm>=3.2.1.post1
 huggingface_hub>=1.0.0
