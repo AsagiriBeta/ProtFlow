@@ -8,7 +8,7 @@
   "data_dir": "./data",
   "src_dir": "./src/protflow",
   "notebooks_dir": "./notebooks",
-  "scripts_dir": "./src/scripts",
+  "cli_dir": "./src/protflow/cli",
   
   "# Input data subdirectories": "",
   "input_sequences_dir": "./data/sequences",

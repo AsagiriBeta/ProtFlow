@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 from pathlib import Path
 
 # Read README
-readme_file = Path(__file__).parent / "docs" / "README.md"
+readme_file = Path(__file__).parent / "README.md"
 long_description = readme_file.read_text(encoding="utf-8") if readme_file.exists() else ""
 
 # Read requirements
@@ -59,7 +59,9 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "protflow=src.scripts.runner:main",
+            "protflow=protflow.cli.runner:main",
+            "protflow-check-deps=protflow.cli.check_deps:main",
+            "protflow-validate-notebook=protflow.cli.validate_notebook:main",
         ],
     },
     include_package_data=True,

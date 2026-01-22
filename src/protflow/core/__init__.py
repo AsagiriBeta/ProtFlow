@@ -13,6 +13,14 @@ from .structure_analysis import (
     perform_clustering_analysis,
     generate_comprehensive_report,
 )
+from .structure_comparison import (
+    compare_structures_tm_align,
+    batch_compare_tm_align,
+    compare_against_reference,
+    compare_structures_pairwise,
+    plot_comparison_results,
+    ComparisonResult,
+)
 
 __all__ = [
     "run_antismash",
@@ -27,4 +35,10 @@ __all__ = [
     "batch_similarity_analysis",
     "perform_clustering_analysis",
     "generate_comprehensive_report",
+    "compare_structures_tm_align",
+    "batch_compare_tm_align",
+    "compare_against_reference",
+    "compare_structures_pairwise",
+    "plot_comparison_results",
+    "ComparisonResult",
 ]

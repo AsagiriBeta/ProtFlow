@@ -8,36 +8,6 @@
 
 ---
 
-## 📖 文档导航
-
-### 快速链接
-- [🏠 文档中心](docs/index.md) - 完整文档索引
-- [⚡ 快速开始](docs/user-guide/quick-start.md) - 5分钟上手ProtFlow
-- [🔧 安装指南](docs/user-guide/installation.md) - 详细安装步骤
-- [📓 Notebook指南](docs/user-guide/migration/notebook-usage.md) - 如何使用Jupyter笔记本
-- [🔄 从Colab迁移](docs/user-guide/migration/from-colab.md) - 从Google Colab迁移到服务器
-- [⚙️ 配置参考](docs/configuration/overview.md) - 配置选项和示例
-
-### 用户指南
-- [教程：基础使用](docs/user-guide/tutorial/basic-usage.md) - 基础工作流程教程
-- [教程：高级功能](docs/user-guide/tutorial/advanced-features.md) - 高级使用模式
-- [故障排除指南](docs/user-guide/tutorial/troubleshooting.md) - 常见问题和解决方案
-
-### 开发者资源
-- [架构概览](docs/developer-guide/architecture.md) - 系统设计和架构
-- [API参考](docs/developer-guide/api-reference.md) - Python API文档
-- [贡献指南](docs/developer-guide/contributing.md) - 如何为项目做贡献
-
-### 项目信息
-- [项目总结](docs/about/project-summary.md) - 项目概览和成果
-- [重构总结](docs/about/refactoring-summary.md) - 代码重构详情
-- [文档审计](docs/audit/documentation-audit.md) - 文档质量审查
-- [重组报告](docs/audit/reorganization-report.md) - 最近文档更新
-
----
-
----
-
 ## 🚀 可用工作流
 
 ### 📂 Notebook 组织结构
@@ -110,6 +80,11 @@
 - **笔记本**: [`notebooks/analysis/21_batch_structure_analysis.ipynb`](notebooks/analysis/21_batch_structure_analysis.ipynb)
 - **用途**: 大规模结构分析
 
+#### 🔬 **结构比对分析 (TM-align)**
+- **工具**: TM-align 结构比对
+- **笔记本**: [`notebooks/analysis/22_structure_comparison_tm_align.ipynb`](notebooks/analysis/22_structure_comparison_tm_align.ipynb)
+- **用途**: 批量结构比对和质量评估
+
 ---
 
 ## 📦 快速开始
@@ -137,7 +112,9 @@ pip install -r requirements.txt
 export HF_TOKEN=hf_your_token_here
 
 # 运行 CLI
-python -m scripts.runner --parse-gbk --predict --limit 5
+protflow --parse-gbk --predict --limit 5
+# 或使用模块方式：
+python -m protflow.cli.runner --parse-gbk --predict --limit 5
 
 # 或启动 JupyterLab 与所有笔记本
 jupyter lab notebooks/
@@ -158,7 +135,7 @@ jupyter lab notebooks/
 # 然后导航到: notebooks/core/00_genome_annotation_to_structure.ipynb
 ```
 
-配置选项参见 `.env.example`。
+配置选项参见 `config/config.example.json`。
 
 ---
 
@@ -167,22 +144,22 @@ jupyter lab notebooks/
 ### CLI 流程
 ```bash
 # 完整流程：解析 → 预测 → DALI 比对 → 对接 → 报告
-python -m scripts.runner --parse-gbk --predict --dali --p2rank --vina --report --smiles "CCO" --limit 5
+protflow --parse-gbk --predict --dali --p2rank --vina --report --smiles "CCO" --limit 5
 
 # Prokka → ESM3 → DALI 流程（推荐用于结构探索）
-python -m scripts.runner --parse-gbk --predict --dali --limit 10
+protflow --parse-gbk --predict --dali --limit 10
 
 # 仅结构预测
-python -m scripts.runner --predict --limit 10
+protflow --predict --limit 10
 
 # DALI 在线模式比对
-python -m scripts.runner --predict --dali --dali-mode online --dali-database pdb25
+protflow --predict --dali --dali-mode online --dali-database pdb25
 
 # 使用自定义配体对接
-python -m scripts.runner --vina --ligand my_drug.mol2 --parallel
+protflow --vina --ligand my_drug.mol2 --parallel
 
 # antiSMASH BGC 分析
-python -m scripts.runner --antismash --gbk-dir ./genomes
+protflow --antismash --gbk-dir ./genomes
 ```
 
 **CLI 选项：**
@@ -202,7 +179,7 @@ python -m scripts.runner --antismash --gbk-dir ./genomes
 --dali-cmd PATH      # 本地 dali.pl 路径
 
 # 输入/输出
---gbk-dir DIR        # GenBank 文件目录（默认: ./esm3_pipeline/gbk_input）
+--gbk-dir DIR        # GenBank 文件目录（默认: ./data/inputs）
 --smiles STR         # 配体 SMILES 字符串
 --ligand FILE        # 配体文件（MOL2/SDF/PDB/等）
 --limit N            # 最大处理序列数
@@ -217,16 +194,18 @@ python -m scripts.runner --antismash --gbk-dir ./genomes
 ### Python API
 ```python
 from pathlib import Path
-from esm3_pipeline import seq_parser, esm3_predict, p2rank, vina_dock
+from protflow.utils.seq_parser import extract_proteins_from_gbk, filter_and_select
+from protflow.prediction.esm3_predict import load_esm3_small, predict_pdbs
+from protflow.docking import p2rank, vina_dock, ligand_prep
 
 # 1. 解析 GenBank 文件
-n = seq_parser.extract_proteins_from_gbk(
-    Path("./gbk_input"), 
+n = extract_proteins_from_gbk(
+    Path("./data/inputs"), 
     Path("./proteins.faa")
 )
 
 # 2. 过滤和选择序列
-selected = seq_parser.filter_and_select(
+selected = filter_and_select(
     Path("./proteins.faa"),
     min_len=50,
     max_len=1200,
@@ -234,20 +213,19 @@ selected = seq_parser.filter_and_select(
 )
 
 # 3. 预测结构
-model, device = esm3_predict.load_esm3_small()
-esm3_predict.predict_pdbs(model, selected, Path("./pdbs"))
+model, device = load_esm3_small()
+predict_pdbs(model, selected, Path("./outputs/structures"))
 
 # 4. 检测口袋
-p2rank.run_p2rank_batch(Path("./pdbs"), Path("./pockets"))
+p2rank.run_p2rank_batch(Path("./outputs/structures"), Path("./outputs/pockets"))
 
 # 5. 对接配体
-from esm3_pipeline.ligand_prep import smiles_to_pdbqt
-ligand = smiles_to_pdbqt("CCO", Path("./ligand.pdbqt"))
+ligand = ligand_prep.smiles_to_pdbqt("CCO", Path("./ligand.pdbqt"))
 vina_dock.dock_to_pockets(
-    Path("./pdbs/protein.pdb"),
+    Path("./outputs/structures/protein.pdb"),
     ligand,
-    Path("./pockets/protein_predictions.csv"),
-    Path("./docking")
+    Path("./outputs/pockets/protein_predictions.csv"),
+    Path("./outputs/docking")
 )
 ```
 
@@ -265,7 +243,7 @@ vina_dock.dock_to_pockets(
   "log_level": "INFO"
 }
 ```
-运行：`python -m scripts.runner --config config.json --predict --report`
+运行：`protflow --config config/config.example.json --predict --report`
 
 ### 环境变量
 ```bash
@@ -299,11 +277,11 @@ chmod a+x ~/bin/run_antismash
 
 ✅ **完全重新组织** - 系统化的笔记本编号和组织结构  
 ✅ **模块化设计** - 每个步骤都可独立运行  
-✅ **高性能** - GPU 加速、缓存、并行处理  
+✅ **高性能** - GPU 加速、缓存、并行处理、批处理  
 ✅ **灵活输入** - GenBank、FASTA、SMILES、分子文件  
 ✅ **生产就绪** - 结构化日志、错误处理、测试  
-✅ **全面文档** - 完整的指南、API参考、架构文档  
-✅ **多语言支持** - 中英文文档
+✅ **统一CLI** - 所有命令行工具统一在 `protflow.cli` 模块  
+✅ **多语言支持** - 中英文 README
 
 ### 项目结构
 ```
@@ -321,25 +299,19 @@ ProtFlow/
 │   │   └── 13_biosynthetic_cluster_antismash.ipynb
 │   └── analysis/                # 结果分析工具 (20-29)
 │       ├── 20_cds_annotation_comparison.ipynb
-│       └── 21_batch_structure_analysis.ipynb
+│       ├── 21_batch_structure_analysis.ipynb
+│       └── 22_structure_comparison_tm_align.ipynb
 ├── src/protflow/                # Python 源代码（模块化）
 │   ├── core/                    # 核心功能
 │   ├── prediction/              # 结构预测
 │   ├── docking/                 # 分子对接
 │   ├── visualization/           # 可视化工具
 │   ├── utils/                   # 工具模块
-│   └── data/                    # 数据目录
-├── scripts/                     # 命令行脚本
+│   └── cli/                     # 命令行工具
 ├── config/                      # 配置文件
 ├── data/                        # 输入数据目录
 ├── outputs/                     # 输出结果目录
-├── docs/                        # 完整文档
-│   ├── index.md                 # 文档中心
-│   ├── user-guide/              # 用户指南和教程
-│   ├── configuration/           # 配置参考
-│   ├── tools/                   # 工具文档
-│   ├── developer-guide/         # 开发者资源
-│   └── audit/                   # 项目审计报告
+├── notebooks/                   # Jupyter notebooks
 ├── tests/                       # 测试文件
 └── README.md                    # 本文件
 ```
@@ -367,13 +339,13 @@ ProtFlow/
 - `config.py` - 配置管理
 - `logger.py` - 日志工具
 - `seq_parser.py` - 序列解析和过滤
+- `notebook_utils.py` - Notebook工具
 
-**传统模块 (`esm3_pipeline/`)**
-- **`seq_parser`** - 序列解析和过滤
-- **`esm3_predict`** - 结构预测
-- **`p2rank`** - 口袋检测
-- **`ligand_prep`** - 配体准备
-- **`vina_dock`** - 分子对接
+**`protflow.cli`** - 命令行工具
+- `runner.py` - 主运行脚本
+- `check_deps.py` - 依赖检查
+- `validate_notebook.py` - Notebook验证
+- `tm_align_comparison.py` - 结构比对工具
 
 ---
 
@@ -389,12 +361,13 @@ ProtFlow/
 
 **调试模式：**
 ```bash
-python -m scripts.runner --log-level DEBUG --log-file debug.log --predict
+protflow --log-level DEBUG --log-file debug.log --predict
 ```
 
 **检查依赖：**
 ```bash
-python scripts/check_deps.py
+protflow-check-deps
+# 或: python -m protflow.cli.check_deps
 ```
 
 ---

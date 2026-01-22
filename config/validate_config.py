@@ -145,7 +145,7 @@ def create_directories(config_path):
     created_count = 0
     
     # Get all directory paths from config
-    dir_keys = [key for key in config.keys() if 'dir' in key and key != 'scripts_dir']
+    dir_keys = [key for key in config.keys() if 'dir' in key and key not in ['scripts_dir', 'cli_dir']]
     
     for dir_key in dir_keys:
         dir_path = base_path / config[dir_key].lstrip('./')

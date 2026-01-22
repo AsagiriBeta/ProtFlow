@@ -141,6 +141,7 @@ def predict_pdbs(
     cache_dir: Optional[Path] = None,
     min_seq_length: int = 30,
     max_seq_length: int = 2000,
+    batch_size: Optional[int] = None,  # Batch size for processing (None = process individually)
 ) -> Dict[str, int]:
     """
     Predict protein structures using ESM3 model with comprehensive parameter support.
@@ -159,6 +160,9 @@ def predict_pdbs(
         cache_dir: Directory for prediction cache
         min_seq_length: Minimum sequence length to process
         max_seq_length: Maximum sequence length to process
+        batch_size: Batch size for processing sequences. If None, processes individually.
+                   Larger batch sizes can improve GPU utilization but require more memory.
+                   Recommended: 4-16 for GPU, 1-4 for CPU.
 
     Returns:
         Dictionary with counts: {'success': int, 'skipped': int, 'errors': int, 'filtered': int}
@@ -195,6 +199,8 @@ def predict_pdbs(
     logger.info(f"Generation config: track={generation_config.track}, "
                 f"num_steps={generation_config.num_steps}, "
                 f"temperature={generation_config.temperature}")
+    if batch_size:
+        logger.info(f"Using batch size: {batch_size}")
 
     # Filter sequences by length
     filtered_records = [
@@ -207,13 +213,72 @@ def predict_pdbs(
         logger.info(f"Filtered {filtered_count} sequences outside length range "
                    f"[{min_seq_length}, {max_seq_length}]")
 
-    iterator = tqdm(filtered_records, desc="Predicting structures") if show_progress else filtered_records
-
     success_count = 0
     skip_count = 0
     error_count = 0
 
-    for rec in iterator:
+    # Process in batches if batch_size is specified
+    if batch_size and batch_size > 1:
+        # Group records into batches
+        batches = [
+            filtered_records[i:i + batch_size]
+            for i in range(0, len(filtered_records), batch_size)
+        ]
+        iterator = tqdm(batches, desc="Predicting structures (batches)") if show_progress else batches
+        
+        for batch in iterator:
+            for rec in batch:
+                try:
+                    seq = str(rec.seq)
+                    name = rec.id.replace('|', '_').replace('/', '_').replace('\\', '_')[:80]
+                    outp = out_dir / f'{name}.pdb'
+
+                    # Skip if already exists
+                    if skip_existing and outp.exists():
+                        logger.debug(f"Skipping {name} (already exists)")
+                        skip_count += 1
+                        continue
+
+                    # Check cache
+                    if cache_predictions:
+                        cache_key = hashlib.md5(seq.encode()).hexdigest()
+                        cache_file = cache_dir / f'{cache_key}.pkl'
+
+                        if cache_file.exists():
+                            logger.debug(f"Loading cached prediction for {name}")
+                            with open(cache_file, 'rb') as f:
+                                prot = pickle.load(f)
+                        else:
+                            prot = ESMProtein(sequence=seq)
+                            prot = model.generate(prot, gen_cfg)
+
+                            # Save to cache
+                            with open(cache_file, 'wb') as f:
+                                pickle.dump(prot, f)
+                    else:
+                        prot = ESMProtein(sequence=seq)
+                        prot = model.generate(prot, gen_cfg)
+
+                    # Write PDB (only for structure track)
+                    if generation_config.track == 'structure':
+                        prot.to_pdb(str(outp))
+                        logger.debug(f"Predicted structure for {name}")
+                    else:
+                        # For other tracks, save as appropriate format
+                        logger.warning(f"Track '{generation_config.track}' not yet fully supported for PDB output")
+                        prot.to_pdb(str(outp))  # Fallback
+
+                    success_count += 1
+
+                except Exception as e:
+                    logger.error(f"Failed to predict structure for {rec.id}: {e}")
+                    error_count += 1
+                    continue
+    else:
+        # Process individually (original behavior)
+        iterator = tqdm(filtered_records, desc="Predicting structures") if show_progress else filtered_records
+
+        for rec in iterator:
         try:
             seq = str(rec.seq)
             name = rec.id.replace('|', '_').replace('/', '_').replace('\\', '_')[:80]

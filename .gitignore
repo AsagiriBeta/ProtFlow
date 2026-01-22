@@ -209,3 +209,13 @@ config/*.server.json
 *_backup.*
 *_old.*
 
+# Temporary/Todo Directory (用户临时文件和结果)
+待办/
+todo/
+todos/
+*.todo
+
+# Old/Unused directories
+prokka_esm3_runs/
+test_output/
+scripts/

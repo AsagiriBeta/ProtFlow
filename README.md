@@ -8,34 +8,6 @@ A modular pipeline for protein structure prediction, pocket detection, and ligan
 
 ---
 
-## 📖 Documentation Navigation
-
-### Quick Links
-- [🏠 Documentation Center](docs/index.md) - Complete documentation index
-- [⚡ Quick Start](docs/user-guide/quick-start.md) - Get started in 5 minutes
-- [🔧 Installation Guide](docs/user-guide/installation.md) - Detailed installation steps
-- [📓 Notebook Guide](docs/user-guide/migration/notebook-usage.md) - How to use Jupyter notebooks
-- [🔄 Migration from Colab](docs/user-guide/migration/from-colab.md) - Migrate from Google Colab
-- [⚙️ Configuration](docs/configuration/overview.md) - Configuration options and examples
-
-### User Guides
-- [Tutorial: Basic Usage](docs/user-guide/tutorial/basic-usage.md) - Basic workflow tutorial
-- [Tutorial: Advanced Features](docs/user-guide/tutorial/advanced-features.md) - Advanced usage patterns
-- [Troubleshooting Guide](docs/user-guide/tutorial/troubleshooting.md) - Common issues and solutions
-
-### Developer Resources
-- [Architecture Overview](docs/developer-guide/architecture.md) - System design and architecture
-- [API Reference](docs/developer-guide/api-reference.md) - Python API documentation
-- [Contributing Guide](docs/developer-guide/contributing.md) - How to contribute to the project
-
-### Project Information
-- [Project Summary](docs/about/project-summary.md) - Project overview and achievements
-- [Refactoring Summary](docs/about/refactoring-summary.md) - Code refactoring details
-- [Documentation Audit](docs/audit/documentation-audit.md) - Documentation quality review
-- [Reorganization Report](docs/audit/reorganization-report.md) - Recent documentation updates
-
----
-
 ## 🚀 Available Workflows
 
 ### 📂 Notebook Organization
@@ -108,6 +80,11 @@ All notebooks are now organized in `/notebooks/` with systematic numbering:
 - **Notebook**: [`notebooks/analysis/21_batch_structure_analysis.ipynb`](notebooks/analysis/21_batch_structure_analysis.ipynb)
 - **Use**: Large-scale structure analysis
 
+#### 🔬 **Structure Comparison (TM-align)**
+- **Tool**: TM-align structure comparison
+- **Notebook**: [`notebooks/analysis/22_structure_comparison_tm_align.ipynb`](notebooks/analysis/22_structure_comparison_tm_align.ipynb)
+- **Use**: Batch structure comparison and quality assessment
+
 ---
 
 ## 📦 Quick Start
@@ -135,7 +112,9 @@ pip install -r requirements.txt
 export HF_TOKEN=hf_your_token_here
 
 # Run CLI
-python -m scripts.runner --parse-gbk --predict --limit 5
+python -m protflow.cli.runner --parse-gbk --predict --limit 5
+# Or use the installed command:
+protflow --parse-gbk --predict --limit 5
 
 # Or launch JupyterLab with all notebooks
 jupyter lab notebooks/
@@ -171,9 +150,7 @@ source ~/jupyter-env-3.12/bin/activate
 jupyter lab notebooks/
 ```
 
-📖 See [文档中心](docs/index.md) for detailed setup instructions and comprehensive documentation.
-
-See `.env.example` for configuration options.
+See `config/config.example.json` for configuration options.
 
 ---
 
@@ -182,22 +159,23 @@ See `.env.example` for configuration options.
 ### CLI Pipeline
 ```bash
 # Full pipeline: parse → predict → DALI alignment → dock → report
-python -m scripts.runner --parse-gbk --predict --dali --p2rank --vina --report --smiles "CCO" --limit 5
+protflow --parse-gbk --predict --dali --p2rank --vina --report --smiles "CCO" --limit 5
+# Or: python -m protflow.cli.runner --parse-gbk --predict --dali --p2rank --vina --report --smiles "CCO" --limit 5
 
 # Prokka → ESM3 → DALI workflow (recommended for structure exploration)
-python -m scripts.runner --parse-gbk --predict --dali --limit 10
+protflow --parse-gbk --predict --dali --limit 10
 
 # Structure prediction only
-python -m scripts.runner --predict --limit 10
+protflow --predict --limit 10
 
 # DALI online alignment
-python -m scripts.runner --predict --dali --dali-mode online --dali-database pdb25
+protflow --predict --dali --dali-mode online --dali-database pdb25
 
 # Docking with custom ligand
-python -m scripts.runner --vina --ligand my_drug.mol2 --parallel
+protflow --vina --ligand my_drug.mol2 --parallel
 
 # antiSMASH BGC analysis
-python -m scripts.runner --antismash --gbk-dir ./genomes
+protflow --antismash --gbk-dir ./genomes
 ```
 
 **CLI Options:**
@@ -217,7 +195,7 @@ python -m scripts.runner --antismash --gbk-dir ./genomes
 --dali-cmd PATH      # Path to local dali.pl
 
 # Input/Output
---gbk-dir DIR        # GenBank files directory (default: ./esm3_pipeline/gbk_input)
+--gbk-dir DIR        # GenBank files directory (default: ./data/inputs)
 --smiles STR         # Ligand SMILES string
 --ligand FILE        # Ligand file (MOL2/SDF/PDB/etc.)
 --limit N            # Max sequences to process
@@ -232,16 +210,18 @@ python -m scripts.runner --antismash --gbk-dir ./genomes
 ### Python API
 ```python
 from pathlib import Path
-from esm3_pipeline import seq_parser, esm3_predict, p2rank, vina_dock
+from protflow.utils.seq_parser import extract_proteins_from_gbk, filter_and_select
+from protflow.prediction.esm3_predict import load_esm3_small, predict_pdbs
+from protflow.docking import p2rank, vina_dock, ligand_prep
 
 # 1. Parse GenBank files
-n = seq_parser.extract_proteins_from_gbk(
-    Path("./gbk_input"), 
+n = extract_proteins_from_gbk(
+    Path("./data/inputs"), 
     Path("./proteins.faa")
 )
 
 # 2. Filter and select sequences
-selected = seq_parser.filter_and_select(
+selected = filter_and_select(
     Path("./proteins.faa"),
     min_len=50,
     max_len=1200,
@@ -249,20 +229,19 @@ selected = seq_parser.filter_and_select(
 )
 
 # 3. Predict structures
-model, device = esm3_predict.load_esm3_small()
-esm3_predict.predict_pdbs(model, selected, Path("./pdbs"))
+model, device = load_esm3_small()
+predict_pdbs(model, selected, Path("./outputs/structures"))
 
 # 4. Detect pockets
-p2rank.run_p2rank_batch(Path("./pdbs"), Path("./pockets"))
+p2rank.run_p2rank_batch(Path("./outputs/structures"), Path("./outputs/pockets"))
 
 # 5. Dock ligand
-from esm3_pipeline.ligand_prep import smiles_to_pdbqt
-ligand = smiles_to_pdbqt("CCO", Path("./ligand.pdbqt"))
+ligand = ligand_prep.smiles_to_pdbqt("CCO", Path("./ligand.pdbqt"))
 vina_dock.dock_to_pockets(
-    Path("./pdbs/protein.pdb"),
+    Path("./outputs/structures/protein.pdb"),
     ligand,
-    Path("./pockets/protein_predictions.csv"),
-    Path("./docking")
+    Path("./outputs/pockets/protein_predictions.csv"),
+    Path("./outputs/docking")
 )
 ```
 
@@ -280,7 +259,7 @@ Create `config.json`:
   "log_level": "INFO"
 }
 ```
-Run: `python -m scripts.runner --config config.json --predict --report`
+Run: `protflow --config config/config.example.json --predict --report`
 
 ### Environment Variables
 ```bash
@@ -314,11 +293,11 @@ chmod a+x ~/bin/run_antismash
 
 ✅ **Completely Reorganized** - Systematic notebook numbering and organization  
 ✅ **Modular Design** - Run any step independently  
-✅ **High Performance** - GPU acceleration, caching, parallel processing  
+✅ **High Performance** - GPU acceleration, caching, parallel processing, batch processing  
 ✅ **Flexible Input** - GenBank, FASTA, SMILES, molecular files  
 ✅ **Production Ready** - Structured logging, error handling, testing  
-✅ **Comprehensive Documentation** - Complete guides, API reference, architecture docs  
-✅ **Multi-language Support** - English and Chinese documentation
+✅ **Unified CLI** - All command-line tools in `protflow.cli` module  
+✅ **Multi-language Support** - English and Chinese README
 
 ### Project Structure
 ```
@@ -336,25 +315,19 @@ ProtFlow/
 │   │   └── 13_biosynthetic_cluster_antismash.ipynb
 │   └── analysis/                # Result analysis tools (20-29)
 │       ├── 20_cds_annotation_comparison.ipynb
-│       └── 21_batch_structure_analysis.ipynb
+│       ├── 21_batch_structure_analysis.ipynb
+│       └── 22_structure_comparison_tm_align.ipynb
 ├── src/protflow/                # Python source code (modular)
 │   ├── core/                    # Core functionality
 │   ├── prediction/              # Structure prediction
 │   ├── docking/                 # Molecular docking
 │   ├── visualization/           # Visualization tools
 │   ├── utils/                   # Utility modules
-│   └── data/                    # Data directories
-├── scripts/                     # Command line scripts
+│   └── cli/                     # Command line tools
 ├── config/                      # Configuration files
 ├── data/                        # Input data directory
 ├── outputs/                     # Output results directory
-├── docs/                        # Complete documentation
-│   ├── index.md                 # Documentation center
-│   ├── user-guide/              # User guides and tutorials
-│   ├── configuration/           # Configuration reference
-│   ├── tools/                   # Tool documentation
-│   ├── developer-guide/         # Developer resources
-│   └── audit/                   # Project audit reports
+├── notebooks/                   # Jupyter notebooks
 ├── tests/                       # Test files
 └── README.md                    # This file
 ```
@@ -382,13 +355,13 @@ ProtFlow/
 - `config.py` - Configuration management
 - `logger.py` - Logging utilities
 - `seq_parser.py` - Sequence parsing and filtering
+- `notebook_utils.py` - Notebook utilities
 
-**Legacy Modules (esm3_pipeline/)**
-- **`seq_parser`** - Sequence parsing and filtering
-- **`esm3_predict`** - Structure prediction
-- **`p2rank`** - Pocket detection
-- **`ligand_prep`** - Ligand preparation
-- **`vina_dock`** - Molecular docking
+**`protflow.cli`** - Command line tools
+- `runner.py` - Main pipeline runner
+- `check_deps.py` - Dependency checker
+- `validate_notebook.py` - Notebook validator
+- `tm_align_comparison.py` - Structure comparison tools
 
 ---
 
@@ -404,12 +377,13 @@ ProtFlow/
 
 **Debug mode:**
 ```bash
-python -m scripts.runner --log-level DEBUG --log-file debug.log --predict
+protflow --log-level DEBUG --log-file debug.log --predict
 ```
 
 **Check dependencies:**
 ```bash
-python scripts/check_deps.py
+protflow-check-deps
+# Or: python -m protflow.cli.check_deps
 ```
 
 ---

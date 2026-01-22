@@ -7,7 +7,7 @@
   "data_dir": "/opt/protflow/data",
   "src_dir": "/opt/protflow/src/protflow",
   "notebooks_dir": "/opt/protflow/notebooks",
-  "scripts_dir": "/opt/protflow/src/scripts",
+  "cli_dir": "/opt/protflow/src/protflow/cli",
   
   "# High-performance input directories": "",
   "input_sequences_dir": "/opt/protflow/data/sequences",
