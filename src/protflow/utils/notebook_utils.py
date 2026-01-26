@@ -433,10 +433,16 @@ def init_notebook(
         work_dir = Path(colab_work_dir)
         work_dir.mkdir(exist_ok=True, parents=True)
         data_dir = work_dir
+        inputs_dir = work_dir / 'inputs'
     else:
         work_dir = project_root / work_dir_name
         work_dir.mkdir(exist_ok=True, parents=True)
         data_dir = project_root / 'data'
+        # 统一的 inputs 目录
+        inputs_dir = data_dir / 'inputs'
+    
+    # 创建 inputs 目录结构
+    inputs_dir.mkdir(exist_ok=True, parents=True)
     
     # 安装依赖
     if packages is None:
@@ -447,11 +453,13 @@ def init_notebook(
         'PROJECT_ROOT': project_root,
         'WORK_DIR': work_dir,
         'DATA_DIR': data_dir,
+        'INPUTS_DIR': inputs_dir,  # 统一的输入目录
         'SRC_DIR': project_root / 'src',
     }
     
     print(f"\n✓ 环境初始化完成")
     print(f"  工作目录: {paths['WORK_DIR']}")
+    print(f"  输入目录: {paths['INPUTS_DIR']}")
     if not in_colab:
         print(f"  项目根目录: {paths['PROJECT_ROOT']}")
     
