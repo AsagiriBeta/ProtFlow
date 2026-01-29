@@ -16,6 +16,7 @@ from .structure_analysis import (
 from .structure_comparison import (
     compare_structures_tm_align,
     batch_compare_tm_align,
+    batch_compare_tm_align_from_dir,
     compare_against_reference,
     compare_structures_pairwise,
     plot_comparison_results,
@@ -37,6 +38,7 @@ __all__ = [
     "generate_comprehensive_report",
     "compare_structures_tm_align",
     "batch_compare_tm_align",
+    "batch_compare_tm_align_from_dir",
     "compare_against_reference",
     "compare_structures_pairwise",
     "plot_comparison_results",
