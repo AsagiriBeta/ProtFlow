@@ -19,7 +19,8 @@ notebooks/
 └── analysis/       # 分析工具 (20-29)
     ├── 20_cds_annotation_comparison.ipynb       # CDS 注释比较
     ├── 21_batch_structure_analysis.ipynb         # 批量结构分析
-    └── 22_structure_comparison_tm_align.ipynb    # TM-align 结构比较
+    ├── 22_structure_comparison_tm_align.ipynb    # TM-align 结构比较（单目录）
+    └── 23_structure_comparison_tm_align_by_sample.ipynb  # TM-align 按样本目录（esm3_structures_by_sample）
 ```
 
 ## 🚀 快速开始
@@ -82,7 +83,8 @@ results = predict_structures_from_fasta(...)
 |----------|------|----------|
 | `20_cds_annotation_comparison.ipynb` | CDS 注释比较 | `protflow.core.cds_comparison` |
 | `21_batch_structure_analysis.ipynb` | 批量结构分析 | `protflow.core.structure_analysis` |
-| `22_structure_comparison_tm_align.ipynb` | TM-align 结构比较 | `protflow.core.structure_comparison` |
+| `22_structure_comparison_tm_align.ipynb` | TM-align 结构比较（单目录） | `protflow.core.structure_comparison` |
+| `23_structure_comparison_tm_align_by_sample.ipynb` | TM-align 按样本目录（esm3_structures_by_sample） | `protflow.core.structure_comparison` |
 
 ## 🛠️ 使用后端模块
 

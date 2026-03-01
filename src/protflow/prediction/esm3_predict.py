@@ -281,7 +281,7 @@ def predict_pdbs(
                     logger.warning(f"Track '{generation_config.track}' not yet fully supported for PDB output")
                     prot.to_pdb(str(outp))  # Fallback
 
-            success_count += 1
+                success_count += 1
 
         except Exception as e:
             logger.error(f"Failed to predict structure for {rec.id}: {e}")

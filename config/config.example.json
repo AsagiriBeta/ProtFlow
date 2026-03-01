@@ -14,6 +14,8 @@
   "input_sequences_dir": "./data/sequences",
   "input_structures_dir": "./data/structures",
   "input_annotations_dir": "./data/annotations",
+  "esm3_structures_by_sample_dir": null,
+  "# esm3_structures_by_sample for TM-align": "e.g. ~/esm3run/predicted/esm3_structures_by_sample",
   
   "# Output subdirectories": "",
   "predictions_dir": "./outputs/predictions",
