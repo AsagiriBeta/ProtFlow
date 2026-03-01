@@ -27,7 +27,7 @@ import sys
 import pandas as pd
 from typing import Optional
 
-from .. import BASE, GBK_DIR, PDB_DIR
+from .. import BASE_DIR, GBK_DIR, PDB_DIR
 from ..utils.config import ProtFlowConfig, set_config
 from ..utils.logger import setup_logging, get_logger
 from ..utils.exceptions import ProtFlowError
@@ -50,7 +50,7 @@ def main(argv=None) -> int:
     # Configuration
     ap.add_argument('--config', type=Path, help='Path to configuration file (JSON/YAML)')
     ap.add_argument('--gbk-dir', type=Path, default=GBK_DIR, help='GenBank files directory')
-    ap.add_argument('--base', type=Path, default=BASE, help='Base output directory')
+    ap.add_argument('--base', type=Path, default=BASE_DIR, help='Base output directory')
 
     # Sequence filtering
     ap.add_argument('--limit', type=int, default=10, help='Max sequences to process')
@@ -112,7 +112,7 @@ def main(argv=None) -> int:
             config = ProtFlowConfig()
 
         # Override with command line arguments
-        if args.base != BASE:
+        if args.base != BASE_DIR:
             config.base_dir = args.base
         if args.gbk_dir != GBK_DIR:
             config.gbk_dir = args.gbk_dir

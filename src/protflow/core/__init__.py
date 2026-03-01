@@ -22,11 +22,18 @@ from .structure_comparison import (
     batch_compare_tm_align,
     batch_compare_tm_align_from_dir,
     batch_compare_tm_align_from_sample_dirs,
+    compare_esm3_samples_vs_reference,
     run_tm_align_esm3_samples,
     compare_against_reference,
     compare_structures_pairwise,
     plot_comparison_results,
     ComparisonResult,
+)
+from .tm_align_db import (
+    get_connection,
+    create_schema,
+    import_csv_to_db,
+    import_from_sample_dir,
 )
 
 __all__ = [
@@ -46,9 +53,14 @@ __all__ = [
     "batch_compare_tm_align",
     "batch_compare_tm_align_from_dir",
     "batch_compare_tm_align_from_sample_dirs",
+    "compare_esm3_samples_vs_reference",
     "run_tm_align_esm3_samples",
     "compare_against_reference",
     "compare_structures_pairwise",
     "plot_comparison_results",
     "ComparisonResult",
+    "get_connection",
+    "create_schema",
+    "import_csv_to_db",
+    "import_from_sample_dir",
 ]

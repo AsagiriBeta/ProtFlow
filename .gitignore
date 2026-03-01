@@ -150,6 +150,11 @@ dali_ready/
 dali_output/
 *.dali
 
+# SQLite (TM-align / BLASTP 等结果库)
+*.db
+*.db-wal
+*.db-shm
+
 # Logs
 *.log
 logs/
@@ -214,6 +219,11 @@ config/*.server.json
 todo/
 todos/
 *.todo
+
+# TM-align / BLASTP 产出（项目根下常见目录，大体积不提交）
+tm_align_by_sample/
+tm_align_esm3_vs_bf_structure/
+tm_align_esm3_vs_reference/
 
 # Old/Unused directories
 prokka_esm3_runs/

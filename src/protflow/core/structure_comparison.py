@@ -77,6 +77,8 @@ def compare_structures_tm_align(
         query_name = query_name or query_pdb.stem
         target_name = target_name or target_pdb.stem
         
+        # tmtools 的 tm_align 返回对象仅暴露 t, u, tm_norm_chain1/2, rmsd，不提供 alignment_length，
+        # 故多数情况下为 None，写入 CSV 时为空；并非比对失败或脚本错误。
         return ComparisonResult(
             query_name=query_name,
             target_name=target_name,
@@ -123,12 +125,17 @@ def batch_compare_tm_align(
     write_batch_size: int = 10000,
     collect_results: bool = True,
     resume: bool = False,
+    tqdm_position: Optional[int] = None,
+    progress_print_interval: Optional[int] = None,
+    maxtasksperchild: Optional[int] = 200,
 ) -> List[ComparisonResult]:
     """
     批量使用 TM-align 比较结构（多进程并行，适合高通量）。
 
     使用 multiprocessing.Pool 进行多进程并行，每个进程独立读 PDB 并做比对，
     适合 CPU 密集型；大批量时建议配合 write_batch_size 与 collect_results 降低 IO 与内存。
+    默认 maxtasksperchild=200，定期回收 worker 进程以降低第三方库（tmtools/biopython）
+    导致的内存累积风险。
 
     Args:
         query_structures: 查询结构 PDB 文件列表
@@ -141,6 +148,9 @@ def batch_compare_tm_align(
         write_batch_size: 每写满多少条结果就刷新到磁盘，减少 IO 阻塞与内存；0 表示全部算完再写
         collect_results: 是否在内存中收集全部结果；大批量（如百万级）建议 False 仅写文件
         resume: 若为 True 且 output_dir/comparison_results.csv 已存在，则跳过已有 (Query,Target) 对，只跑剩余任务并追加写入
+        tqdm_position: 内层进度条显示行号（用于按样本目录时与外层「样本进度」分两行显示），None 为默认单条
+        progress_print_interval: 每完成多少对打印一行进度（已比对 x/total、已用时间、预估剩余），None 不打印
+        maxtasksperchild: 每个 worker 完成多少任务后退出并重建，用于限制内存累积；None 表示不限制（不推荐大批量）
 
     Returns:
         比对结果列表（当 collect_results=False 时为空列表；resume 时仅含本次新产生的结果）
@@ -191,15 +201,24 @@ def batch_compare_tm_align(
             writer.writerow(["Query", "Target", "RMSD", "TM_score", "Alignment_length"])
             f.flush()
 
-        with Pool(processes=num_workers) as pool:
-            with tqdm(
+        pool_kw: dict = {"processes": num_workers}
+        if maxtasksperchild is not None:
+            pool_kw["maxtasksperchild"] = maxtasksperchild
+        with Pool(**pool_kw) as pool:
+            tqdm_kw: dict = dict(
                 total=n_tasks,
                 desc="比对进度",
                 unit="对",
                 unit_scale=False,
                 bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]",
-            ) as pbar:
+            )
+            if tqdm_position is not None:
+                tqdm_kw["position"] = tqdm_position
+                tqdm_kw["leave"] = False
+            with tqdm(**tqdm_kw) as pbar:
+                n_done = 0
                 for result in pool.imap_unordered(_worker_compare_tm_align, tasks, chunksize=chunk_size):
+                    n_done += 1
                     if result:
                         if collect_results:
                             results.append(result)
@@ -217,6 +236,15 @@ def batch_compare_tm_align(
                             total_written += len(batch)
                             batch = []
                     pbar.update()
+                    if progress_print_interval and n_done % progress_print_interval == 0:
+                        elapsed = time.perf_counter() - t0
+                        pct = 100.0 * n_done / n_tasks
+                        rate = n_done / elapsed if elapsed > 0 else 0
+                        eta = (n_tasks - n_done) / rate if rate > 0 else 0
+                        print(
+                            f"  已比对 {n_done}/{n_tasks} ({pct:.1f}%) 已用 {elapsed:.0f}s 预估剩余 {eta:.0f}s",
+                            flush=True,
+                        )
 
         # 剩余批次
         if batch:
@@ -247,6 +275,8 @@ def compare_structures_pairwise(
     write_batch_size: int = 10000,
     collect_results: bool = True,
     resume: bool = False,
+    tqdm_position: Optional[int] = None,
+    progress_print_interval: Optional[int] = None,
 ) -> List[ComparisonResult]:
     """
     对所有结构进行两两比对（多进程并行）。
@@ -275,6 +305,8 @@ def compare_structures_pairwise(
         write_batch_size=write_batch_size,
         collect_results=collect_results,
         resume=resume,
+        tqdm_position=tqdm_position,
+        progress_print_interval=progress_print_interval,
     )
 
 
@@ -480,6 +512,8 @@ def batch_compare_tm_align_from_sample_dirs(
         unit="样本",
         unit_scale=False,
         bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]",
+        position=0,
+        leave=True,
     ) as pbar:
         for sample_path in pbar:
             sample_id = sample_path.name
@@ -488,7 +522,10 @@ def batch_compare_tm_align_from_sample_dirs(
                 logger.debug(f"Skip {sample_id}: only {len(structures)} PDB(s), need >= {min_pdbs}")
                 pbar.set_postfix_str(sample_id[:20], refresh=False)
                 continue
-            pbar.set_postfix_str(sample_id[:20], refresh=False)
+            n_pairs = len(structures) * (len(structures) - 1) // 2
+            pbar.set_postfix_str(f"{sample_id[:12]} | {len(structures)} PDB, {n_pairs} 对", refresh=False)
+            # 持久打印一行，避免被内层「比对进度」条刷新盖掉
+            print(f">>> 当前样本: {sample_id} | {len(structures)} PDB, {n_pairs} 对", flush=True)
             sample_output = output_base / sample_id
             sample_output.mkdir(parents=True, exist_ok=True)
             results = compare_structures_pairwise(
@@ -499,6 +536,120 @@ def batch_compare_tm_align_from_sample_dirs(
                 write_batch_size=write_batch_size,
                 collect_results=collect_results,
                 resume=resume,
+                tqdm_position=1,
+                progress_print_interval=50000,
+            )
+            all_results[sample_id] = results
+            logger.info(f"Sample {sample_id}: {len(results)} comparisons -> {sample_output}")
+    elapsed = time.perf_counter() - t0
+    total_pairs = sum(len(r) for r in all_results.values())
+    if elapsed > 0 and total_pairs > 0:
+        logger.info(f"总耗时 {elapsed:.1f}s，共 {total_pairs} 对，平均 {total_pairs / elapsed:.1f} 对/s")
+    return all_results
+
+
+def compare_esm3_samples_vs_reference(
+    parent_dir: Path,
+    reference_dir: Path,
+    output_base: Path,
+    pattern: str = "*.pdb",
+    num_workers: Optional[int] = None,
+    chunk_size: Optional[int] = None,
+    write_batch_size: int = 10000,
+    collect_results: bool = True,
+    sample_dirs: Optional[List[str]] = None,
+    min_pdbs: int = 1,
+    resume: bool = False,
+) -> Dict[str, List[ComparisonResult]]:
+    """
+    以 esm3_structures_by_sample 为查询、以参考目录（如 bf_structure）为目标，对每个样本内的
+    每个 ESM3 结构与参考目录内全部 PDB 做 TM-align。Query=ESM3，Target=参考。
+
+    目录结构预期：
+        parent_dir/           (如 ~/esm3run/predicted/esm3_structures_by_sample)
+            sample_id_1/
+                *.pdb         (ESM3 预测)
+            ...
+        reference_dir/        (如 ~/esm3run/TPS_database/reviewed_results/bf_structure)
+            *.pdb             (参考结构)
+
+    每个样本的结果写入 output_base / sample_id / comparison_results.csv。
+
+    Args:
+        parent_dir: esm3_structures_by_sample 顶层目录
+        reference_dir: 参考 PDB 目录（如 bf_structure）
+        output_base: 结果输出根目录
+        pattern: PDB 通配符
+        num_workers: 并行进程数
+        chunk_size: 任务块大小
+        write_batch_size: 每批写入条数
+        collect_results: 是否在内存中收集每个样本结果
+        sample_dirs: 仅处理这些样本子目录名；None 表示全部
+        min_pdbs: 样本内至少多少个 PDB 才参与比对
+        resume: 若为 True，跳过已有 (Query,Target) 对并追加写入
+
+    Returns:
+        样本 ID -> 该样本比对结果列表（collect_results=False 时值为空列表）
+    """
+    parent_dir = Path(parent_dir)
+    reference_dir = Path(reference_dir)
+    output_base = Path(output_base)
+    if not parent_dir.exists():
+        logger.error(f"parent_dir not found: {parent_dir}")
+        return {}
+    if not reference_dir.exists():
+        logger.error(f"reference_dir not found: {reference_dir}")
+        return {}
+
+    reference_structures = sorted(reference_dir.glob(pattern))
+    if not reference_structures:
+        logger.warning(f"No files matching {pattern} in {reference_dir}")
+        return {}
+    logger.info(f"参考目录 {reference_dir.name}: {len(reference_structures)} 个 PDB")
+
+    if sample_dirs is not None:
+        subdirs = [parent_dir / d for d in sample_dirs if (parent_dir / d).is_dir()]
+    else:
+        subdirs = [d for d in parent_dir.iterdir() if d.is_dir() and not d.name.startswith(".")]
+
+    all_results: Dict[str, List[ComparisonResult]] = {}
+    subdirs_sorted = sorted(subdirs)
+    t0 = time.perf_counter()
+    with tqdm(
+        subdirs_sorted,
+        desc="样本进度",
+        unit="样本",
+        unit_scale=False,
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]",
+        position=0,
+        leave=True,
+    ) as pbar:
+        for sample_path in pbar:
+            sample_id = sample_path.name
+            query_structures = sorted(sample_path.glob(pattern))
+            if len(query_structures) < min_pdbs:
+                logger.debug(f"Skip {sample_id}: only {len(query_structures)} PDB(s)")
+                pbar.set_postfix_str(sample_id[:20], refresh=False)
+                continue
+            n_pairs = len(query_structures) * len(reference_structures)
+            pbar.set_postfix_str(
+                f"{sample_id[:12]} | {len(query_structures)}×{len(reference_structures)}={n_pairs} 对",
+                refresh=False,
+            )
+            print(f">>> 当前样本: {sample_id} | Query {len(query_structures)} × Target {len(reference_structures)} = {n_pairs} 对", flush=True)
+            sample_output = output_base / sample_id
+            sample_output.mkdir(parents=True, exist_ok=True)
+            results = batch_compare_tm_align(
+                query_structures=query_structures,
+                target_structures=reference_structures,
+                output_dir=sample_output,
+                num_workers=num_workers,
+                chunk_size=chunk_size,
+                write_batch_size=write_batch_size,
+                collect_results=collect_results,
+                resume=resume,
+                tqdm_position=1,
+                progress_print_interval=10000,
             )
             all_results[sample_id] = results
             logger.info(f"Sample {sample_id}: {len(results)} comparisons -> {sample_output}")
