@@ -5,6 +5,12 @@ TM-align 筛选 + BLASTP：从 tm_align_results 中筛出 TM-score > 阈值且 R
 筛选条件（默认）：tm_score > 0.75 且 rmsd < 3.5。
 
 用法：
+    # 一键命令（先设置环境变量，筛选条件默认 TM-score > 0.75 且 RMSD < 3.5）：
+    export PROKKA_DIR=/path/to/prokka_results
+    export BF_SEQ_DIR=/path/to/bf_seq
+    python -m protflow.cli.blastp_tm_filter
+
+    # 或直接传路径：
     python -m protflow.cli.blastp_tm_filter --db ./tm_align_results.db --prokka /path/to/prokka_results --bf-seq /path/to/bf_seq
     python -m protflow.cli.blastp_tm_filter --db ./tm_align_results.db --tm-cutoff 0.75 --rmsd-cutoff 3.5 -w 150
 """
@@ -213,22 +219,28 @@ def main() -> int:
         description="TM-align 筛选 (TM-score > 阈值, RMSD < 阈值) + BLASTP，结果写入 blast_results 表",
     )
     parser.add_argument("--db", type=Path, default=Path("tm_align_results.db"), help="SQLite 库路径（含 tm_align_results 表）")
-    parser.add_argument("--prokka", type=Path, required=True, help="Prokka 结果根目录（每样本一子目录，内含 .faa）")
-    parser.add_argument("--bf-seq", type=Path, required=True, help="参考序列目录（bf_seq，.fasta/.fa）")
+    parser.add_argument("--prokka", type=Path, default=None, help="Prokka 结果根目录；不传时用环境变量 PROKKA_DIR")
+    parser.add_argument("--bf-seq", type=Path, default=None, help="参考序列目录（bf_seq）；不传时用环境变量 BF_SEQ_DIR")
     parser.add_argument("--tm-cutoff", type=float, default=0.75, help="TM-score 下限（默认 0.75）")
     parser.add_argument("--rmsd-cutoff", type=float, default=3.5, help="RMSD 上限（默认 3.5）")
     parser.add_argument("-w", "--workers", type=int, default=150, help="BLASTP 并发进程数")
     args = parser.parse_args()
 
+    _prokka = args.prokka or (Path(os.environ["PROKKA_DIR"]) if os.environ.get("PROKKA_DIR") else None)
+    _bf_seq = args.bf_seq or (Path(os.environ["BF_SEQ_DIR"]) if os.environ.get("BF_SEQ_DIR") else None)
+    prokka_root = _prokka.resolve() if _prokka else None
+    bf_seq_dir = _bf_seq.resolve() if _bf_seq else None
     db_path = args.db.resolve()
-    prokka_root = args.prokka.resolve()
-    bf_seq_dir = args.bf_seq.resolve()
+
+    if not prokka_root or not prokka_root.is_dir():
+        print("[!] 请指定 Prokka 目录：--prokka /path/to/prokka_results 或设置环境变量 PROKKA_DIR")
+        return 1
+    if not bf_seq_dir or not bf_seq_dir.is_dir():
+        print("[!] 请指定 bf_seq 目录：--bf-seq /path/to/bf_seq 或设置环境变量 BF_SEQ_DIR")
+        return 1
 
     if not db_path.is_file():
         print(f"[!] 数据库不存在: {db_path}")
-        return 1
-    if not bf_seq_dir.is_dir():
-        print(f"[!] bf_seq 目录不存在: {bf_seq_dir}")
         return 1
 
     target_cache = preload_target_sequences(bf_seq_dir)
